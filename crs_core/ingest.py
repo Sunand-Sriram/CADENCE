@@ -135,3 +135,4 @@ def clone_repo(url: str, workspace_dir: str | Path | None = None) -> dict[str, s
 
     commit = _resolve_head(dest)
     return {"repo": repo_name, "commit": commit, "path": str(dest)}
+

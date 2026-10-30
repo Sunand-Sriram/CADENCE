@@ -7,3 +7,4 @@ __pycache__/
 *.pyc
 targets/target/fuzz_harness
 approved_patches/
+workspace/
