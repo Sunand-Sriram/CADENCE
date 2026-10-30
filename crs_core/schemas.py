@@ -88,3 +88,13 @@ class CryptoAsset(BaseModel):
     library: str | None = None
     is_weak: bool = False
     weak_reason: str = ""
+
+
+class RiskAssessment(BaseModel):
+    """Deterministic weighted risk assessment for one CryptoAsset."""
+    asset_id: str
+    algorithm: str
+    score: int
+    band: str
+    factors: dict[str, int]
+    rationale: str

@@ -113,3 +113,12 @@
   the existing overflow statement for the crash demo.
 - Verify result: CBOM output contained only crypto assets, marked the weak
   primitives, and contained no non-crypto entries.
+
+## 2026-10-31 — Step 11 — deterministic crypto risk engine (before/after)
+
+- Added a fixed five-factor, weighted deterministic risk engine with Low through
+  Critical bands and one-line dominant-factor rationales.
+- Added before/after substitution scoring for weak CBOM algorithms and a CLI
+  that writes `evidence/risk.json`.
+- Verify result: MD5 and `rand` scored Critical before replacement and dropped
+  sharply with SHA256 and getrandom/CSPRNG; AES remained Low.
