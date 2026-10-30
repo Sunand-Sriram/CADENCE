@@ -93,6 +93,37 @@ function renderRisk(payload) {
   document.querySelector("#cbom-section").insertAdjacentElement("afterend", section);
 }
 
+function renderQuantum(payload) {
+  document.querySelector("#quantum-section")?.remove();
+  const assessments = payload?.assessments || [];
+  if (!assessments.length) return;
+
+  const section = document.createElement("section");
+  section.id = "quantum-section";
+  section.innerHTML = `<div class="section-heading"><h2>Quantum Risk (Mosca's Inequality)</h2><span class="section-meta">${assessments.length} ASSESSMENT${assessments.length === 1 ? "" : "S"}</span></div>
+    <p class="quantum-explainer">At risk when data shelf-life (X) + migration time (Y) exceeds time-to-quantum (Z).</p>
+    <div class="table-wrap"><table class="quantum-table">
+      <thead><tr><th>Algorithm</th><th>Quantum Threat</th><th>X+Y vs Z</th><th>Urgency</th><th>Recommended PQC</th></tr></thead>
+      <tbody>${assessments.map(assessment => {
+        const threat = assessment.shor_broken
+          ? `<span class="quantum-threat shor">Shor (broken)</span>`
+          : assessment.grover_weakened
+            ? `<span class="quantum-threat grover">Grover (weakened)</span>`
+            : `<span class="quantum-threat none">—</span>`;
+        const comparison = `${assessment.mosca_x}+${assessment.mosca_y} ${assessment.mosca_x + assessment.mosca_y > assessment.mosca_z ? ">" : "<="} ${assessment.mosca_z}`;
+        return `<tr class="${assessment.mosca_at_risk ? "at-risk" : ""}">
+          <td><span class="algorithm">${escapeHtml(assessment.algorithm)}</span></td>
+          <td>${threat}</td>
+          <td class="mono">${escapeHtml(comparison)}</td>
+          <td><span class="urgency ${escapeHtml(String(assessment.urgency).toLowerCase())}">${escapeHtml(assessment.urgency)}</span></td>
+          <td class="recommended-pqc">${escapeHtml(assessment.recommended_pqc)}</td>
+        </tr>`;
+      }).join("")}</tbody>
+    </table></div>`;
+  const riskSection = document.querySelector("#risk-section");
+  (riskSection || document.querySelector("#cbom-section")).insertAdjacentElement("afterend", section);
+}
+
 async function loadDashboard() {
   setConnection("CONNECTING");
   try {
@@ -103,11 +134,17 @@ async function loadDashboard() {
     } catch (error) {
       renderRisk({ assessments: [] });
     }
+    try {
+      renderQuantum(await quantum());
+    } catch (error) {
+      renderQuantum({ assessments: [] });
+    }
     setConnection(USE_MOCK ? "MOCK" : "LIVE");
   } catch (error) {
     setConnection("OFFLINE", "Backend unreachable — start the Kali API or set USE_MOCK = true for local demo data.");
     document.querySelector("#cbom-body").innerHTML = `<tr><td colspan="5" class="empty-state error-state">CBOM unavailable while backend is unreachable.</td></tr>`;
     renderRisk({ assessments: [] });
+    renderQuantum({ assessments: [] });
   }
 }
 

@@ -187,3 +187,9 @@
 - Added the data-driven Risk Assessment table below CBOM with score, severity
   band, and rationale fields from `/api/risk?job_id=default`.
 - The panel is omitted when risk assessments are empty or unavailable.
+
+## 2026-10-31 — Step 18 — quantum CBOM panel
+
+- Added the conditional Quantum Risk (Mosca's Inequality) table with Shor and
+  Grover classification, X+Y vs Z comparisons, urgency, and PQC guidance.
+- The panel is omitted when quantum assessments are empty or unavailable.

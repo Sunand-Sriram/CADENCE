@@ -50,6 +50,14 @@ th:first-child, td:first-child { padding-left: 14px; }
 .risk-band.moderate { border-color: var(--sand); color: var(--navy); }
 .risk-band.low { border-color: var(--green); color: var(--green); }
 .rationale { color: var(--grey); }
+#quantum-section { border-top: 1px solid var(--sand); margin-top: 42px; padding-top: 21px; }
+.quantum-explainer { margin: -4px 0 17px; color: var(--grey); font: .75rem var(--mono); }
+.quantum-table tr.at-risk td:first-child { border-left: 3px solid var(--coral); padding-left: 11px; }
+.quantum-threat, .urgency { font: 700 .72rem var(--mono); }
+.quantum-threat.shor, .urgency.critical, .urgency.high { color: var(--coral); }
+.quantum-threat.grover, .urgency.medium { color: var(--navy); background: var(--sand); padding: 3px 5px; }
+.quantum-threat.none, .urgency.low, .urgency.none { color: var(--green); }
+.recommended-pqc { color: var(--navy); font-family: var(--mono); font-size: .76rem; }
 .empty-state { color: var(--grey); font: .78rem var(--mono); padding: 22px 0; }
 .error-state { color: var(--coral); }
 @media (max-width: 720px) {
