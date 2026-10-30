@@ -1,0 +1,14 @@
+<think>
+The sanitizer identifies a signed integer overflow in the calculation of the
+allocation size. The attacker controls ciphertext_len, so a large positive
+length can wrap the signed int before it is passed to malloc. The negative
+result is then clamped to zero, while the original large length is still used
+by memcpy, leaving an undersized allocation and an out-of-bounds write. This is
+an integer-overflow vulnerability in decrypt_record.
+</think>
+{
+  "root_cause": "The attacker-controlled ciphertext_len is added to a fixed overhead in signed int arithmetic, allowing overflow and a zero-sized allocation before memcpy copies the original length.",
+  "vulnerability_class": "integer-overflow",
+  "faulty_function": "decrypt_record",
+  "confidence": 0.99
+}

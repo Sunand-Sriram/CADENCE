@@ -33,6 +33,7 @@ Env:
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import shutil
@@ -45,6 +46,8 @@ import litellm
 
 from .schemas import CrashEvent, Diagnosis, PatchProposal, ValidationResult
 
+LOGGER = logging.getLogger(__name__)
+
 # --------------------------------------------------------------------------- #
 # Config
 # --------------------------------------------------------------------------- #
@@ -53,6 +56,8 @@ MARTIAN_MODEL = os.getenv("CRS_MARTIAN_MODEL", "ollama_chat/deepseek-r1:7b")
 VINCENT_MODEL = os.getenv("CRS_VINCENT_MODEL", "ollama_chat/qwen2.5-coder:14b")
 LLM_TIMEOUT = int(os.getenv("CRS_LLM_TIMEOUT", "600"))
 MAX_ATTEMPTS = int(os.getenv("CRS_MAX_PATCH_ATTEMPTS", "4"))
+LLM_MODE = os.getenv("CRS_LLM_MODE", "mock")
+MOCK_DIR = Path(os.getenv("CRS_MOCK_DIR", "./mocks"))
 
 HARNESS_BIN_REL = os.getenv("CRS_HARNESS_BIN_REL", "fuzz_harness")
 BUILD_CMD = os.getenv("CRS_BUILD_CMD", "make -C {repo}")
@@ -68,6 +73,20 @@ RUN_TIMEOUT = int(os.getenv("CRS_RUN_TIMEOUT", "60"))
 def _complete(model: str, prompt: str, temperature: float = 0.1, max_tokens: int = 2048) -> str:
     """One-shot completion against local Ollama. R1 ignores system prompts, so
     everything goes in a single user turn."""
+    mode = LLM_MODE.lower()
+    mock_file = None
+    if mode == "mock":
+        if model == MARTIAN_MODEL:
+            mock_file = MOCK_DIR / "martian.txt"
+        elif model == VINCENT_MODEL:
+            mock_file = MOCK_DIR / "vincent.txt"
+    LOGGER.info("_complete mode=%s model=%s mock_file=%s", mode, model, mock_file or "-")
+    if mode == "mock":
+        if mock_file is None:
+            raise ValueError(f"No mock response is configured for model {model!r}")
+        return mock_file.read_text(encoding="utf-8")
+    if mode != "live":
+        raise ValueError(f"Unsupported CRS_LLM_MODE {LLM_MODE!r}; expected 'mock' or 'live'")
     resp = litellm.completion(
         model=model,
         api_base=OLLAMA_BASE_URL,

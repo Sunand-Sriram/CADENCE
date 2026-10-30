@@ -1,0 +1,4 @@
+{
+  "patched_code": "void decrypt_record(const unsigned char *ciphertext, int ciphertext_len)\n{\n    if (ciphertext_len < 0)\n        return;\n    size_t allocation_size = (size_t)ciphertext_len;\n    if (allocation_size > (size_t)-1 - 32u)\n        return;\n    allocation_size += 32u;\n    unsigned char *plaintext = malloc(allocation_size);\n    if (plaintext == NULL)\n        return;\n    memcpy(plaintext, ciphertext, (size_t)ciphertext_len);\n    free(plaintext);\n}",
+  "rationale": "Validate the signed length and perform the size calculation in size_t with an overflow guard before allocating and copying."
+}

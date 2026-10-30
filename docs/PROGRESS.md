@@ -19,3 +19,14 @@
   the seed and prints its indented JSON followed by the crash ID.
 - Verify result: the injector ran successfully in the Python 3.11 venv and
   emitted a valid Pydantic `CrashEvent`.
+
+## 2026-10-31 — Step 3 — mock LLM seam
+
+- Added the environment-controlled offline seam in `_complete()` with mock
+  responses for MARTIAN and VINCENT; the live LiteLLM-to-Ollama path remains
+  unchanged. No changes were made to `schemas.py` or `broker.py`.
+- Added `mocks/martian.txt` with `<think>` reasoning and a Diagnosis-shaped
+  JSON response, and `mocks/vincent.txt` with a complete fixed
+  `decrypt_record` function and rationale.
+- Verify result: importing `_complete` and loading both mock responses passed
+  in the Python 3.11 venv; logging showed mock mode and the selected files.
