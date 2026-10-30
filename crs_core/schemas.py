@@ -76,3 +76,15 @@ class ValidationResult(BaseModel):
     @property
     def accepted(self) -> bool:
         return self.builds and self.crash_fixed and self.regression_pass
+
+
+class CryptoAsset(BaseModel):
+    """One statically detected cryptographic or crypto-adjacent operation."""
+    asset_id: str
+    algorithm: str
+    operation: str
+    file_path: str
+    line: int
+    library: str | None = None
+    is_weak: bool = False
+    weak_reason: str = ""

@@ -94,3 +94,13 @@
   retained scan-and-delete with `flushdb` fallback for `crs:*` keys.
 - Verify result: reset ran without error on macOS using the available Redis
   backend path.
+
+## 2026-10-31 — Step 10 — CBOM crypto inventory
+
+- Added the independent, read-only `scan_cbom()` pass for C/C headers and the
+  `scripts/run_cbom.py` table/JSON output, without changing the crash pipeline.
+- Added `CryptoAsset` to the end of `crs_core/schemas.py`, including stable
+  asset IDs and weak-primitive reasons for legacy algorithms and modes.
+- Verify result: scanning `targets/target/vuln.c` detected length arithmetic,
+  allocation, and length-copy operations in `decrypt_record`; `evidence/cbom.json`
+  was written.
