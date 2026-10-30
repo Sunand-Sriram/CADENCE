@@ -98,3 +98,19 @@ class RiskAssessment(BaseModel):
     band: str
     factors: dict[str, int]
     rationale: str
+
+
+class QuantumAssessment(BaseModel):
+    """Deterministic quantum-decryption and Mosca-inequality assessment."""
+    asset_id: str
+    algorithm: str
+    quantum_vulnerable: bool
+    shor_broken: bool
+    grover_weakened: bool
+    mosca_x: int
+    mosca_y: int
+    mosca_z: int
+    mosca_at_risk: bool
+    urgency: str
+    recommended_pqc: str
+    note: str

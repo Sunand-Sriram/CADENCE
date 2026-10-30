@@ -122,3 +122,12 @@
   that writes `evidence/risk.json`.
 - Verify result: MD5 and `rand` scored Critical before replacement and dropped
   sharply with SHA256 and getrandom/CSPRNG; AES remained Low.
+
+## 2026-10-31 — Step 12 — quantum CBOM (Mosca's inequality)
+
+- Added a separate deterministic quantum assessment model using tunable
+  Mosca X + Y > Z values and Shor/Grover algorithm-family classification.
+- Added `scripts/run_quantum.py` to write `evidence/quantum_cbom.json` and
+  print synthetic RSA-2048 and ECDSA-P256 Shor examples for demonstration.
+- Verify result: AES was classified as Grover-weakened but not at risk, while
+  both illustrative asymmetric assets were Critical and Shor-broken.
