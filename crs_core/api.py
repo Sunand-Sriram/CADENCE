@@ -49,7 +49,15 @@ from .compare import compare_alternatives
 from .ingest import IngestError, clone_repo
 from .quantum_cbom import assess_quantum
 from .risk import score_after, score_asset
-from .schemas import CrashEvent, CryptoAsset, QuantumAssessment, RiskAssessment, Sanitizer
+from .schemas import (
+    CrashEvent,
+    CryptoAsset,
+    PatchProposal,
+    QuantumAssessment,
+    RiskAssessment,
+    Sanitizer,
+    ValidationResult,
+)
 
 # Ensure PRISM has non-empty test/build commands in mock mode even if agents was imported earlier.
 if not _agents.TEST_CMD:
@@ -307,6 +315,42 @@ def _compute_or_load_comparison(job: dict[str, Any], asset_id: str) -> dict[str,
         result = compare_alternatives(event, diagnosis, func_code, func_name, asset, substitutes)
         result["_diagnosis"] = diagnosis.model_dump(mode="json")
         result["_crash"] = event.model_dump(mode="json")
+        result["_func_code"] = func_code
+        result["_func_name"] = func_name
+
+        candidates = result.get("candidates", [])
+        recommended_alg = result.get("recommended")
+        selected_idx, selected_cand = next(
+            (
+                (idx, cand)
+                for idx, cand in enumerate(candidates, 1)
+                if cand.get("target_algorithm") == recommended_alg
+            ),
+            (1, candidates[0]) if candidates else (1, None),
+        )
+        if selected_cand is not None:
+            result["_patch"] = PatchProposal(
+                crash_id=event.crash_id,
+                target_file=event.source_file,
+                function_name=func_name,
+                original_code=func_code,
+                patched_code=str(selected_cand.get("patched_code", "")),
+                rationale=(
+                    f"Targeted replacement of {asset.algorithm} with "
+                    f"{selected_cand.get('target_algorithm', '')}."
+                ),
+                attempt=selected_idx,
+            ).model_dump(mode="json")
+            c_fixed = bool(selected_cand.get("crash_fixed", False))
+            r_pass = bool(selected_cand.get("regression_pass", False))
+            result["_validation"] = ValidationResult(
+                crash_id=event.crash_id,
+                attempt=selected_idx,
+                builds=bool(selected_cand.get("builds", False)),
+                crash_fixed=c_fixed,
+                regression_pass=r_pass,
+                details=f"crash_fixed={c_fixed}; regression_pass={r_pass}.",
+            ).model_dump(mode="json")
     except Exception as exc:
         LOGGER.exception("Comparison failed for asset %s: %s", asset.asset_id, exc)
         before = score_asset(asset)
@@ -563,6 +607,58 @@ def get_evidence(
             except (OSError, json.JSONDecodeError):
                 continue
 
+    # Assemble patch and validation from the standalone crash bundle or active comparison candidate.
+    derived_patch = comparison.get("_patch") if comparison else None
+    derived_validation = comparison.get("_validation") if comparison else None
+    if comparison and (derived_patch is None or derived_validation is None or approval):
+        candidates = comparison.get("candidates", [])
+        target_alg = (
+            approval.get("chosen_algorithm")
+            if isinstance(approval, dict) and approval.get("chosen_algorithm")
+            else comparison.get("recommended")
+        )
+        selected_idx, selected_cand = next(
+            (
+                (idx, cand)
+                for idx, cand in enumerate(candidates, 1)
+                if cand.get("target_algorithm") == target_alg
+            ),
+            (1, candidates[0]) if candidates else (1, None),
+        )
+        if selected_cand is not None:
+            crash_info = crash_bundle.get("crash") or comparison.get("_crash") or {}
+            diag_info = crash_bundle.get("diagnosis") or comparison.get("_diagnosis") or {}
+            crash_id = str(crash_info.get("crash_id") or diag_info.get("crash_id") or asset_id)
+            target_file = str(
+                crash_info.get("source_file") or (asset.file_path if asset else "vuln.c")
+            )
+            func_name = str(
+                comparison.get("_func_name") or diag_info.get("faulty_function") or "decrypt_record"
+            )
+            orig_code = str(comparison.get("_func_code") or "")
+            derived_patch = PatchProposal(
+                crash_id=crash_id,
+                target_file=target_file,
+                function_name=func_name,
+                original_code=orig_code,
+                patched_code=str(selected_cand.get("patched_code", "")),
+                rationale=(
+                    f"Targeted replacement of {comparison.get('algorithm', '')} with "
+                    f"{selected_cand.get('target_algorithm', '')}."
+                ),
+                attempt=selected_idx,
+            ).model_dump(mode="json")
+            c_fixed = bool(selected_cand.get("crash_fixed", False))
+            r_pass = bool(selected_cand.get("regression_pass", False))
+            derived_validation = ValidationResult(
+                crash_id=crash_id,
+                attempt=selected_idx,
+                builds=bool(selected_cand.get("builds", False)),
+                crash_fixed=c_fixed,
+                regression_pass=r_pass,
+                details=f"crash_fixed={c_fixed}; regression_pass={r_pass}.",
+            ).model_dump(mode="json")
+
     return {
         "asset_id": asset_id,
         "job_id": job["job_id"],
@@ -580,8 +676,8 @@ def get_evidence(
         "approval": approval,
         "crash": crash_bundle.get("crash") or (comparison.get("_crash") if comparison else None),
         "diagnosis": crash_bundle.get("diagnosis") or (comparison.get("_diagnosis") if comparison else None),
-        "patch": crash_bundle.get("patch"),
-        "validation": crash_bundle.get("validation"),
+        "patch": crash_bundle.get("patch") or derived_patch,
+        "validation": crash_bundle.get("validation") or derived_validation,
     }
 
 
