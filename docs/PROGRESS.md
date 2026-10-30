@@ -74,3 +74,13 @@
   reset completed with `crs:*` keys cleared and crash/evidence files removed.
 - Fixed the worker launcher to put the repository `.venv/bin` on `PATH`, and
   quoted the local ignored `.env` test command so it loads as `echo ok`.
+
+## 2026-10-31 — Step 8 — live-mode fixes (reasoning_trace + vuln_class normalization)
+
+- Captured Ollama/LiteLLM split reasoning from `message.reasoning_content` or
+  `message.reasoning`, while retaining inline `<think>` parsing and mock-mode
+  behavior.
+- Tightened the MARTIAN vulnerability-label instruction and normalized parsed
+  values to one allowed class, coercing echoed multi-value hints safely.
+- Verify result: mock `scripts/check_agents.py` passed with a single
+  `integer-overflow` vulnerability class.

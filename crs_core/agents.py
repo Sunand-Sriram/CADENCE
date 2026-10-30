@@ -70,6 +70,15 @@ RUN_TIMEOUT = int(os.getenv("CRS_RUN_TIMEOUT", "60"))
 # --------------------------------------------------------------------------- #
 # LLM transport
 # --------------------------------------------------------------------------- #
+class _CompletionText(str):
+    """Completion text with optional reasoning returned in a separate field."""
+
+    def __new__(cls, content: str, reasoning: str = ""):
+        result = super().__new__(cls, content)
+        result.reasoning = reasoning
+        return result
+
+
 def _complete(model: str, prompt: str, temperature: float = 0.1, max_tokens: int = 2048) -> str:
     """One-shot completion against local Ollama. R1 ignores system prompts, so
     everything goes in a single user turn."""
@@ -84,7 +93,7 @@ def _complete(model: str, prompt: str, temperature: float = 0.1, max_tokens: int
     if mode == "mock":
         if mock_file is None:
             raise ValueError(f"No mock response is configured for model {model!r}")
-        return mock_file.read_text(encoding="utf-8")
+        return _CompletionText(mock_file.read_text(encoding="utf-8"))
     if mode != "live":
         raise ValueError(f"Unsupported CRS_LLM_MODE {LLM_MODE!r}; expected 'mock' or 'live'")
     resp = litellm.completion(
@@ -96,7 +105,18 @@ def _complete(model: str, prompt: str, temperature: float = 0.1, max_tokens: int
         max_tokens=max_tokens,
         timeout=LLM_TIMEOUT,
     )
-    return resp["choices"][0]["message"]["content"] or ""
+    message = resp["choices"][0]["message"]
+    if isinstance(message, dict):
+        content = message.get("content") or ""
+        reasoning = message.get("reasoning_content") or message.get("reasoning") or ""
+    else:
+        content = getattr(message, "content", None) or ""
+        reasoning = (
+            getattr(message, "reasoning_content", None)
+            or getattr(message, "reasoning", None)
+            or ""
+        )
+    return _CompletionText(content, str(reasoning))
 
 
 _THINK_RE = re.compile(r"<think>(.*?)</think>", re.DOTALL)
@@ -222,14 +242,26 @@ FUNCTION UNDER ANALYSIS ({func_name}):
 ```
 
 Reason step by step inside <think>...</think>. Then output ONLY one JSON object, no prose after it:
-{{"root_cause": "<concise>", "vulnerability_class": "timing-channel|integer-overflow|bigint-memory|other", "faulty_function": "{func_name}", "confidence": 0.0}}"""
+Choose exactly ONE canonical vulnerability label: the timing-channel label, the
+integer-overflow label, the bigint-memory label, or the fallback other label.
+Output only that single label; never combine labels or use separators.
+{{"root_cause": "<concise>", "vulnerability_class": "<one label only>", "faulty_function": "{func_name}", "confidence": 0.0}}"""
     raw = _complete(MARTIAN_MODEL, prompt, temperature=0.1)
     reasoning, answer = split_think(raw)
+    if not reasoning.strip():
+        reasoning = str(getattr(raw, "reasoning", "") or "").strip()
     data = extract_json(answer) or {}
+    allowed_classes = ("timing-channel", "integer-overflow", "bigint-memory", "other")
+    vulnerability_class = str(data.get("vulnerability_class", "other")).strip()
+    if vulnerability_class not in allowed_classes:
+        vulnerability_class = next(
+            (candidate for candidate in allowed_classes if candidate in vulnerability_class),
+            "other",
+        )
     return Diagnosis(
         crash_id=event.crash_id,
         root_cause=str(data.get("root_cause", "")).strip(),
-        vulnerability_class=str(data.get("vulnerability_class", "other")).strip() or "other",
+        vulnerability_class=vulnerability_class,
         faulty_function=str(data.get("faulty_function", func_name)).strip() or func_name,
         reasoning_trace=reasoning,
         confidence=float(data.get("confidence", 0.0) or 0.0),
