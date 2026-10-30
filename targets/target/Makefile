@@ -1,7 +1,7 @@
 CC      := clang
 CFLAGS  := -g -O1 -fsanitize=address,fuzzer,undefined -fno-sanitize-recover=undefined -Wall
 HARNESS := fuzz_harness
-SRCS    := fuzz_harness.c vuln.c
+SRCS    := fuzz_harness.c vuln.c crypto_stubs.c
 
 .PHONY: all test clean
 
