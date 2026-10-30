@@ -104,3 +104,12 @@
 - Verify result: scanning `targets/target/vuln.c` detected length arithmetic,
   allocation, and length-copy operations in `decrypt_record`; `evidence/cbom.json`
   was written.
+
+## 2026-10-31 — Step 10b — crypto-only CBOM + crypto in target
+
+- Restricted CBOM detection to cryptographic primitives and common crypto APIs;
+  removed all length, memory, copy, and integer-arithmetic detectors.
+- Added MD5, AES, and `rand()` stand-ins to `decrypt_record` while preserving
+  the existing overflow statement for the crash demo.
+- Verify result: CBOM output contained only crypto assets, marked the weak
+  primitives, and contained no non-crypto entries.
