@@ -8,6 +8,7 @@
 - 2026-10-31 — Added the Risk Assessment panel consuming `/api/risk?job_id=default`; it renders only when assessments exist.
 - 2026-10-31 — Added the Quantum Risk (Mosca's Inequality) panel consuming `/api/quantum?job_id=default` with Shor/Grover classification and PQC recommendations.
 - 2026-10-31 — Added the Fix Alternatives comparison and approval panel; the Approve button is wired to `POST /api/approve`.
+- 2026-10-31 — Wired the ingest bar to `POST /api/ingest`, status polling, and panel refresh using the active `job_id`.
 
 ## KALI NOTES
 

@@ -3,6 +3,8 @@ const USE_MOCK = true;
 
 let currentJobId = "default";
 let mockDataPromise;
+let mockIngestStartedAt = 0;
+let mockIngestRepo = "";
 
 async function mockData() {
   if (!mockDataPromise) mockDataPromise = fetch("mock-data.json").then(response => response.json());
@@ -24,9 +26,27 @@ async function request(path, options = {}, mockKey) {
 
 async function health() { return request("/api/health", {}, "health"); }
 async function ingest(repo_url) {
+  if (USE_MOCK) {
+    mockIngestStartedAt = Date.now();
+    mockIngestRepo = repo_url;
+    const data = await mockData();
+    return { ...data.ingest, job_id: "mockjob", repo: repo_url, status: "started" };
+  }
   return request("/api/ingest", { method: "POST", body: JSON.stringify({ repo_url }) }, "ingest");
 }
 async function ingestStatus(job_id = currentJobId) {
+  if (USE_MOCK && job_id === "mockjob") {
+    const data = await mockData();
+    const complete = Date.now() - mockIngestStartedAt >= 2000;
+    return {
+      ...data.ingestStatus,
+      job_id,
+      status: complete ? "done" : "running",
+      repo: mockIngestRepo,
+      commit: data.ingestStatus.commit,
+      error: null,
+    };
+  }
   return request(`/api/ingest/${encodeURIComponent(job_id)}`, {}, "ingestStatus");
 }
 async function cbom(job_id = currentJobId) {
@@ -194,6 +214,29 @@ async function loadFixComparisons(assets) {
   renderFixComparisons(results);
 }
 
+function wait(milliseconds) {
+  return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+async function pollIngest(jobId, repo) {
+  while (true) {
+    const status = await ingestStatus(jobId);
+    if (status.status === "done") {
+      currentJobId = status.job_id || jobId;
+      await loadDashboard();
+      const shortCommit = status.commit ? ` @ ${String(status.commit).slice(0, 7)}` : "";
+      setConnection(USE_MOCK ? "MOCK" : "LIVE", `Analyzed ${status.repo || repo}${shortCommit}`);
+      return;
+    }
+    if (status.status === "error") {
+      setConnection("ERROR", `Analysis failed — ${status.error || "unknown error"}`);
+      return;
+    }
+    setConnection("INGESTING", `Cloning and scanning ${status.repo || repo}…`);
+    await wait(1500);
+  }
+}
+
 async function loadDashboard() {
   setConnection("CONNECTING");
   try {
@@ -224,13 +267,11 @@ async function startIngest(event) {
   event.preventDefault();
   const url = document.querySelector("#repo-url").value.trim();
   if (!url) return setConnection("READY", "Enter a GitHub URL to start analysis.");
-  setConnection("INGESTING", "Cloning repository and starting crypto analysis…");
+  if (!/^https?:\/\/\S+$/i.test(url)) return setConnection("READY", "Enter a valid repository URL.");
+  setConnection("INGESTING", `Cloning and scanning ${url}…`);
   try {
     const started = await ingest(url);
-    currentJobId = started.job_id || "default";
-    await ingestStatus(currentJobId);
-    setConnection("LIVE", `Analysis started for ${started.repo || url}.`);
-    await loadDashboard();
+    await pollIngest(started.job_id || "default", started.repo || url);
   } catch (error) {
     setConnection("OFFLINE", "Backend unreachable — the ingest request could not be completed.");
   }

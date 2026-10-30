@@ -199,3 +199,10 @@
 - Added weak-asset comparison tables with validation, before/after risk, drops,
   recommended candidates, and approval actions.
 - Approvals are posted through `/api/approve` and reflected inline per asset.
+
+## 2026-10-31 — Step 20 — github ingest wired, frontend complete
+
+- Wired GitHub URL analysis to ingest, status polling, active job switching, and
+  refreshes for CBOM, Risk, Quantum, and Fix Alternatives.
+- Added quiet validation, progress, completion, error, and unreachable states;
+  mock mode simulates a two-second ingest lifecycle.
