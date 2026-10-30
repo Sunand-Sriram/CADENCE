@@ -52,27 +52,13 @@ async function evidence(asset_id, job_id = currentJobId) {
 }
 
 function setConnection(state, message = "") {
-  const pill = document.querySelector("#connection-pill");
   const banner = document.querySelector("#backend-message");
-  pill.textContent = state;
-  pill.className = `connection-pill ${state.toLowerCase()}`;
   banner.textContent = message;
-  banner.className = `backend-message ${message ? "visible" : ""}`;
+  banner.className = `backend-message ${message ? "visible" : ""} ${state.toLowerCase()}`;
 }
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[character]));
-}
-
-function renderRepo(status, healthData) {
-  const fields = [
-    ["STATUS", status.status || "unknown", status.status === "done" ? "good" : ""],
-    ["REPOSITORY", status.repo || "default", ""],
-    ["COMMIT", status.commit || "—", "mono"],
-    ["LLM MODE", healthData.llm_mode || "—", "mono"],
-  ];
-  document.querySelector("#repo-status").innerHTML = fields.map(([label, value, className]) => `<div class="status-item"><span>${label}</span><strong class="${className}">${escapeHtml(value)}</strong></div>`).join("");
-  document.querySelector("#job-id").textContent = currentJobId;
 }
 
 function renderCbom(payload) {
@@ -80,23 +66,22 @@ function renderCbom(payload) {
   document.querySelector("#asset-count").textContent = `${assets.length} ASSET${assets.length === 1 ? "" : "S"}`;
   document.querySelector("#cbom-body").innerHTML = assets.length ? assets.map(asset => `<tr>
     <td><span class="algorithm">${escapeHtml(asset.algorithm)}</span></td>
+    <td class="mono asset-id">${escapeHtml(asset.asset_id)}</td>
     <td class="mono">${escapeHtml(asset.file_path)}:${escapeHtml(asset.line)}</td>
     <td>${escapeHtml(asset.operation)}</td>
     <td>${asset.is_weak ? `<span class="badge weak" title="${escapeHtml(asset.weak_reason)}">WEAK</span>` : `<span class="badge safe">CLEAR</span>`}</td>
-  </tr>`).join("") : `<tr><td colspan="4" class="empty-state">No cryptographic assets found.</td></tr>`;
+  </tr>`).join("") : `<tr><td colspan="5" class="empty-state">No cryptographic assets found.</td></tr>`;
 }
 
 async function loadDashboard() {
   setConnection("CONNECTING");
   try {
     const [healthData, status, assets] = await Promise.all([health(), ingestStatus(), cbom()]);
-    renderRepo(status, healthData);
     renderCbom(assets);
     setConnection(USE_MOCK ? "MOCK" : "LIVE");
   } catch (error) {
     setConnection("OFFLINE", "Backend unreachable — start the Kali API or set USE_MOCK = true for local demo data.");
-    document.querySelector("#repo-status").innerHTML = `<div class="empty-state error-state">Unable to load repository status.</div>`;
-    document.querySelector("#cbom-body").innerHTML = `<tr><td colspan="4" class="empty-state error-state">CBOM unavailable while backend is unreachable.</td></tr>`;
+    document.querySelector("#cbom-body").innerHTML = `<tr><td colspan="5" class="empty-state error-state">CBOM unavailable while backend is unreachable.</td></tr>`;
   }
 }
 
@@ -108,9 +93,7 @@ async function startIngest(event) {
   try {
     const started = await ingest(url);
     currentJobId = started.job_id || "default";
-    document.querySelector("#job-id").textContent = currentJobId;
-    const status = await ingestStatus(currentJobId);
-    renderRepo(status, await health());
+    await ingestStatus(currentJobId);
     setConnection("LIVE", `Analysis started for ${started.repo || url}.`);
     await loadDashboard();
   } catch (error) {

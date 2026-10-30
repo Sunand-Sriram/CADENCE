@@ -174,3 +174,10 @@
   CBOM table.
 - Verify result: frontend is runnable with `python -m http.server 5500` from
   `frontend/`; remaining dashboard sections are labeled stubs for follow-up.
+
+## 2026-10-31 — Step 16b — UI redesign (palette, restrained, no filler)
+
+- Reworked the frontend to a light cream/navy dashboard with sand dividers,
+  coral weak badges, and restrained rectangular controls.
+- Removed unbuilt sections and filler cards so only the header, ingest bar,
+  quiet backend state, and real CBOM table render.
