@@ -1,0 +1,1 @@
+"""Hybrid CRS core: schemas, crash broker, and the MARTIAN/VINCENT/PRISM driver."""
