@@ -1,0 +1,9 @@
+celery
+redis
+fastapi
+uvicorn
+watchdog
+litellm
+pydantic>=2
+tree_sitter
+tree_sitter_languages

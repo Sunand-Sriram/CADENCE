@@ -1,0 +1,6 @@
+.venv/
+.env
+crashes/
+evidence/
+__pycache__/
+*.pyc
