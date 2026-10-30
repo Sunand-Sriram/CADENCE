@@ -74,7 +74,7 @@ EVIDENCE_DIR = Path(os.getenv("CRS_EVIDENCE_DIR", str(ROOT / "evidence"))).resol
 
 # Link-only harness stubs in targets/target/ are filtered from primary CBOM listings
 # so call sites in vuln.c are not double-counted against crypto_stubs.c definitions.
-_HARNESS_STUB_FILES = {"crypto_stubs.c", "fuzz_harness.c"}
+_HARNESS_STUB_FILES = {"crypto_stubs.c", "fuzz_harness.c", "crypto_shim.h"}
 
 SUBSTITUTES: dict[str, list[str]] = {
     "md5": ["SHA256", "SHA3-256"],
