@@ -30,3 +30,13 @@
   `decrypt_record` function and rationale.
 - Verify result: importing `_complete` and loading both mock responses passed
   in the Python 3.11 venv; logging showed mock mode and the selected files.
+
+## 2026-10-31 — Step 4 — tree-sitter slicing
+
+- Added `scripts/check_slice.py` to exercise `slice_function` at the vulnerable
+  line in `targets/target/vuln.c`.
+- Diagnosed the initial `<window>` fallback as an API mismatch between
+  `tree_sitter_languages==1.10.2` and `tree_sitter==0.26.0`; constrained
+  `tree_sitter` to `<0.21` in `requirements.txt`.
+- Verify result: the checker returned the real `decrypt_record` body with
+  `function_name=decrypt_record`, `start_line=4`, and `end_line=14`.

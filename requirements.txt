@@ -5,5 +5,5 @@ uvicorn
 watchdog
 litellm
 pydantic>=2
-tree_sitter
+tree_sitter<0.21
 tree_sitter_languages
