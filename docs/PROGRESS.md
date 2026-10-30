@@ -61,3 +61,16 @@
   regression command on attempt 1.
 - Verify result: `builds=True`, `crash_fixed=True`, `regression_pass=True`,
   `accepted=True`; `evidence/0334b4d5b14eb1db.json` was created.
+
+## 2026-10-31 — Step 7 — autonomous Celery flow + status + reset
+
+- Added `--submit` and salted crash IDs to `scripts/seed_event.py`, configured
+  the macOS-safe Celery worker command, and added `scripts/status.py` plus a
+  Redis-aware `scripts/reset_demo.sh` that preserves `crashes/seed_crash`.
+- Started the Docker-backed Redis worker and submitted `--submit --salt run1`;
+  worker task `crs.handle_crash` ran the full repair loop without further
+  action and logged `48064f906ee86511 -> FIXED`.
+- Verify result: status reported `48064f906ee86511 integer-overflow FIXED`;
+  reset completed with `crs:*` keys cleared and crash/evidence files removed.
+- Fixed the worker launcher to put the repository `.venv/bin` on `PATH`, and
+  quoted the local ignored `.env` test command so it loads as `echo ok`.
