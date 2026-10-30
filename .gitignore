@@ -6,3 +6,4 @@ evidence/
 __pycache__/
 *.pyc
 targets/target/fuzz_harness
+approved_patches/

@@ -35,6 +35,7 @@ def compare_alternatives(
             "risk_after": after.score,
             "risk_drop": before.score - after.score,
             "patch_hash": hashlib.sha256(patch.patched_code.encode("utf-8")).hexdigest()[:12],
+            "patched_code": patch.patched_code,
         })
 
     eligible = [candidate for candidate in candidates if candidate["validates"]]

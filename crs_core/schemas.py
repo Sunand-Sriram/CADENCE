@@ -114,3 +114,17 @@ class QuantumAssessment(BaseModel):
     urgency: str
     recommended_pqc: str
     note: str
+
+
+class ApprovalRecord(BaseModel):
+    """A human selection of one validated candidate fix."""
+    asset_id: str
+    algorithm: str
+    chosen_algorithm: str
+    chosen_patch_hash: str
+    risk_before: int
+    risk_after: int
+    approved_by: str = "user"
+    approved_at: float
+    status: str
+    note: str

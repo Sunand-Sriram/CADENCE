@@ -140,3 +140,12 @@
   per-asset comparison artifact with the recommended validated alternative.
 - Verify result: mock mode produced and validated both MD5 alternatives,
   included risk drops and patch hashes, and selected a recommendation.
+
+## 2026-10-31 — Step 14 — human approval / fix selection
+
+- Added deterministic human approval records for validated comparison
+  candidates, including the selected risk transition and patch hash.
+- Added an approval CLI that marks the recommendation, refuses non-validating
+  choices, and writes approved function patches outside the original repo.
+- Verify result: SHA256 was approved from the mock comparison at risk 66 -> 17;
+  non-validating candidate approval was refused.
