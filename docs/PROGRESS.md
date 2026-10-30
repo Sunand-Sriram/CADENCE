@@ -193,3 +193,9 @@
 - Added the conditional Quantum Risk (Mosca's Inequality) table with Shor and
   Grover classification, X+Y vs Z comparisons, urgency, and PQC guidance.
 - The panel is omitted when quantum assessments are empty or unavailable.
+
+## 2026-10-31 — Step 19 — fix comparison + approval panel
+
+- Added weak-asset comparison tables with validation, before/after risk, drops,
+  recommended candidates, and approval actions.
+- Approvals are posted through `/api/approve` and reflected inline per asset.
