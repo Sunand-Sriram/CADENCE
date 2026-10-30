@@ -84,3 +84,13 @@
   values to one allowed class, coercing echoed multi-value hints safely.
 - Verify result: mock `scripts/check_agents.py` passed with a single
   `integer-overflow` vulnerability class.
+
+## 2026-10-31 — Step 9 — reset_demo.sh works with Docker or native Redis
+
+- Made `scripts/reset_demo.sh` prefer a host `redis-cli`, otherwise use a
+  running `crs-redis` Docker container, with a clear manual-cleanup warning
+  when neither backend is available.
+- Preserved `crashes/seed_crash`, cleared other crash/evidence files, and
+  retained scan-and-delete with `flushdb` fallback for `crs:*` keys.
+- Verify result: reset ran without error on macOS using the available Redis
+  backend path.
