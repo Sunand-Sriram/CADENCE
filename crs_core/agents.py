@@ -306,6 +306,24 @@ Output ONLY one JSON object, no prose:
     )
 
 
+def run_vincent_targeted(
+    event: CrashEvent,
+    diagnosis: Diagnosis,
+    func_code: str,
+    func_name: str,
+    attempt: int,
+    target_algorithm: str,
+) -> PatchProposal:
+    """Reuse VINCENT while requiring one specific replacement algorithm."""
+    targeted_diagnosis = diagnosis.model_copy(update={
+        "root_cause": (
+            f"{diagnosis.root_cause}\n"
+            f"TARGETED INSTRUCTION: Replace the weak primitive with {target_algorithm} specifically."
+        ),
+    })
+    return run_vincent(event, targeted_diagnosis, func_code, func_name, attempt)
+
+
 # --------------------------------------------------------------------------- #
 # PRISM -- deterministic validator (NO model)
 # --------------------------------------------------------------------------- #

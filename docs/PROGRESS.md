@@ -131,3 +131,12 @@
   print synthetic RSA-2048 and ECDSA-P256 Shor examples for demonstration.
 - Verify result: AES was classified as Grover-weakened but not at risk, while
   both illustrative asymmetric assets were Critical and Shor-broken.
+
+## 2026-10-31 — Step 13 — multi-alternative fix comparison
+
+- Added targeted VINCENT generation plus isolated PRISM validation for each
+  substitute algorithm, with deterministic before/after risk scoring and rank.
+- Added `scripts/run_compare.py` to compare weak CBOM assets and write a
+  per-asset comparison artifact with the recommended validated alternative.
+- Verify result: mock mode produced and validated both MD5 alternatives,
+  included risk drops and patch hashes, and selected a recommendation.
