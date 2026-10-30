@@ -1,5 +1,5 @@
 CC      := clang
-CFLAGS  := -g -O1 -fsanitize=address,fuzzer,undefined -fno-sanitize-recover=undefined -Wall
+CFLAGS  := -g -O1 -fsanitize=address,fuzzer,undefined -fno-sanitize-recover=undefined -Wall -include crypto_shim.h
 HARNESS := fuzz_harness
 SRCS    := fuzz_harness.c vuln.c crypto_stubs.c
 

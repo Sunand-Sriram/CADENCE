@@ -24,3 +24,15 @@ void AES_encrypt(const unsigned char *input, unsigned char *output, const unsign
     for (size_t i = 0; i < 16; ++i)
         output[i] = (unsigned char)(input[i] ^ key[i]);
 }
+
+void SHA256(const unsigned char *data, size_t length, unsigned char *digest) {
+    (void)data;
+    for (size_t i = 0; i < 32; ++i)
+        digest[i] = (unsigned char)(length + i);
+}
+
+void SHA3_256(const unsigned char *data, size_t length, unsigned char *digest) {
+    (void)data;
+    for (size_t i = 0; i < 32; ++i)
+        digest[i] = (unsigned char)(length * 2 + i);
+}
