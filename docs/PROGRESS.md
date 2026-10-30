@@ -40,3 +40,12 @@
   `tree_sitter` to `<0.21` in `requirements.txt`.
 - Verify result: the checker returned the real `decrypt_record` body with
   `function_name=decrypt_record`, `start_line=4`, and `end_line=14`.
+
+## 2026-10-31 — Step 5 — agents in mock mode
+
+- Added `scripts/check_agents.py` to construct the seed `CrashEvent`, slice the
+  target, run MARTIAN and VINCENT, and print their Pydantic results.
+- Verify result: with `CRS_LLM_MODE=mock`, both `_complete` calls logged mock
+  file selection and made no network call; Diagnosis captured the `<think>`
+  reasoning separately with clean JSON fields, and PatchProposal contained a
+  complete `decrypt_record` function.
