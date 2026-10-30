@@ -49,3 +49,15 @@
   file selection and made no network call; Diagnosis captured the `<think>`
   reasoning separately with clean JSON fields, and PatchProposal contained a
   complete `decrypt_record` function.
+
+## 2026-10-31 — Step 6 — PRISM + full loop
+
+- Extended `scripts/check_agents.py` to run `orchestrate_repair(event)`, print
+  the complete `ValidationResult`, and verify accepted evidence contains the
+  diagnosis, patch, and validation bundle.
+- Ran with mock LLMs, `CRS_BUILD_CMD=true`, and `CRS_TEST_CMD="echo ok"`.
+  PRISM copied the target to scratch, applied the verbatim function patch,
+  treated the absent harness's sanitizer-free output as fixed, and passed the
+  regression command on attempt 1.
+- Verify result: `builds=True`, `crash_fixed=True`, `regression_pass=True`,
+  `accepted=True`; `evidence/0334b4d5b14eb1db.json` was created.

@@ -1,8 +1,9 @@
 import logging
+import json
 import os
 from pathlib import Path
 
-from crs_core.agents import run_martian, run_vincent, slice_function
+from crs_core.agents import orchestrate_repair, run_martian, run_vincent, slice_function
 from crs_core.schemas import CrashEvent, Sanitizer
 
 
@@ -39,3 +40,18 @@ assert diagnosis.reasoning_trace.strip()
 assert "<think>" not in diagnosis.root_cause
 assert patch.patched_code.startswith("void decrypt_record(")
 assert patch.patched_code.rstrip().endswith("}")
+
+result = orchestrate_repair(event)
+print("ValidationResult:")
+print(result.model_dump_json(indent=2))
+
+evidence_path = ROOT / "evidence" / f"{event.crash_id}.json"
+print(f"evidence_path: {evidence_path}")
+print(f"evidence_exists: {evidence_path.exists()}")
+if not result.accepted:
+    print(f"PRISM failure details: {result.details}")
+    raise SystemExit("orchestrate_repair did not produce an accepted result")
+
+assert evidence_path.exists()
+evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+assert {"diagnosis", "patch", "validation"}.issubset(evidence)
