@@ -1,0 +1,25 @@
+{
+  "health": {"status":"ok","llm_mode":"mock"},
+  "ingest": {"job_id":"default","repo":"targets/target","commit":"local-demo","status":"started"},
+  "ingestStatus": {"job_id":"default","status":"done","repo":"targets/target","commit":"local-demo","error":null},
+  "cbom": {"assets":[
+    {"asset_id":"1ed2ac29e593","algorithm":"MD5","operation":"hash","file_path":"vuln.c","line":12,"is_weak":true,"weak_reason":"MD5 is cryptographically broken."},
+    {"asset_id":"7e9d6230baee","algorithm":"AES","operation":"encrypt","file_path":"vuln.c","line":13,"is_weak":false,"weak_reason":""},
+    {"asset_id":"5756754084d8","algorithm":"rand","operation":"random","file_path":"vuln.c","line":15,"is_weak":true,"weak_reason":"rand()/random() is not suitable for security-sensitive randomness."}
+  ]},
+  "risk": {"assessments":[
+    {"asset_id":"1ed2ac29e593","algorithm":"MD5","score":66,"band":"High","factors":{"weakness":100,"exposure":60,"data_sensitivity":20,"lifetime":50,"feasibility":60},"rationale":"weakness is the dominant factor at 100/100."},
+    {"asset_id":"7e9d6230baee","algorithm":"AES","score":19,"band":"Low","factors":{"weakness":15,"exposure":20,"data_sensitivity":20,"lifetime":25,"feasibility":20},"rationale":"lifetime is the dominant factor at 25/100."},
+    {"asset_id":"5756754084d8","algorithm":"rand","score":70,"band":"Critical","factors":{"weakness":100,"exposure":60,"data_sensitivity":45,"lifetime":50,"feasibility":60},"rationale":"weakness is the dominant factor at 100/100."}
+  ]},
+  "quantum": {"assessments":[
+    {"asset_id":"1ed2ac29e593","algorithm":"MD5","shor_broken":false,"grover_weakened":false,"mosca_x":10,"mosca_y":3,"mosca_z":10,"mosca_at_risk":false,"urgency":"None","recommended_pqc":"no action","note":"Already classically weak."},
+    {"asset_id":"7e9d6230baee","algorithm":"AES","shor_broken":false,"grover_weakened":true,"mosca_x":10,"mosca_y":3,"mosca_z":10,"mosca_at_risk":true,"urgency":"Medium","recommended_pqc":"AES-256","note":"Grover halves effective key strength."},
+    {"asset_id":"5756754084d8","algorithm":"rand","shor_broken":false,"grover_weakened":false,"mosca_x":10,"mosca_y":3,"mosca_z":10,"mosca_at_risk":false,"urgency":"None","recommended_pqc":"no action","note":"Already classically weak."},
+    {"asset_id":"demo-rsa-2048","algorithm":"RSA-2048","shor_broken":true,"grover_weakened":false,"mosca_x":10,"mosca_y":3,"mosca_z":10,"mosca_at_risk":true,"urgency":"Critical","recommended_pqc":"ML-KEM (Kyber)","note":"Shor's algorithm breaks the asymmetric key-establishment scheme."},
+    {"asset_id":"demo-ecdsa-p256","algorithm":"ECDSA-P256","shor_broken":true,"grover_weakened":false,"mosca_x":10,"mosca_y":3,"mosca_z":10,"mosca_at_risk":true,"urgency":"Critical","recommended_pqc":"ML-DSA (Dilithium) or SLH-DSA (SPHINCS+)","note":"Shor's algorithm breaks the asymmetric signature scheme."}
+  ]},
+  "compare": {"asset_id":"1ed2ac29e593","algorithm":"MD5","candidates":[{"target_algorithm":"SHA256","validates":true,"builds":true,"crash_fixed":true,"regression_pass":true,"risk_before":66,"risk_after":17,"risk_drop":49,"patch_hash":"9da9086db4c9"},{"target_algorithm":"SHA3-256","validates":true,"builds":true,"crash_fixed":true,"regression_pass":true,"risk_before":66,"risk_after":22,"risk_drop":44,"patch_hash":"9da9086db4c9"}],"recommended":"SHA256"},
+  "approve": {"status":"approved","asset_id":"1ed2ac29e593","chosen_algorithm":"SHA256","risk_before":66,"risk_after":17,"patch_hash":"9da9086db4c9","note":"Selected lowest validated after-risk."},
+  "evidence": {"asset_id":"1ed2ac29e593","algorithm":"MD5","status":"approved","chosen_algorithm":"SHA256","risk_before":66,"risk_after":17}
+}

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CADENCE — Cryptographic Asset Discovery Engine</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">CRYPTOGRAPHIC ASSET DISCOVERY ENGINE</p>
+        <h1>CADENCE</h1>
+      </div>
+      <div id="connection-pill" class="connection-pill">CONNECTING</div>
+    </header>
+
+    <main>
+      <section class="hero-card">
+        <div>
+          <p class="eyebrow">REPOSITORY ANALYSIS</p>
+          <h2>Map the cryptography before it becomes a liability.</h2>
+          <p class="muted">Point CADENCE at a GitHub repository to inventory crypto usage and surface remediation risk.</p>
+        </div>
+        <form id="ingest-form" class="ingest-form">
+          <label for="repo-url">GitHub repository URL</label>
+          <div class="input-row">
+            <input id="repo-url" name="repo_url" type="url" placeholder="https://github.com/org/repository" autocomplete="off">
+            <button type="submit">Analyze</button>
+          </div>
+        </form>
+      </section>
+
+      <div id="backend-message" class="backend-message" role="status" aria-live="polite"></div>
+
+      <section class="panel" id="repo-status-section">
+        <div class="section-heading"><span class="section-index">01</span><div><p class="eyebrow">REPOSITORY</p><h2>Repo / Status</h2></div></div>
+        <div id="repo-status" class="status-grid"><div class="empty-state">Loading repository status…</div></div>
+      </section>
+
+      <section class="panel" id="cbom-section">
+        <div class="section-heading"><span class="section-index">02</span><div><p class="eyebrow">INVENTORY</p><h2>CBOM</h2></div><span id="asset-count" class="section-meta">— ASSETS</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Algorithm</th><th>Location</th><th>Operation</th><th>Weakness</th></tr></thead>
+            <tbody id="cbom-body"><tr><td colspan="4" class="empty-state">Loading crypto assets…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel stub-panel" id="risk-section">
+        <div class="section-heading"><span class="section-index">03</span><div><p class="eyebrow">CLASSICAL EXPOSURE</p><h2>Risk</h2></div></div>
+        <div class="stub-card">Risk assessments will appear here in the next dashboard pass.</div>
+      </section>
+
+      <section class="panel stub-panel" id="quantum-section">
+        <div class="section-heading"><span class="section-index">04</span><div><p class="eyebrow">POST-QUANTUM READINESS</p><h2>Quantum CBOM</h2></div></div>
+        <div class="stub-card">Mosca / Shor / Grover assessments will appear here in the next dashboard pass.</div>
+      </section>
+
+      <section class="panel stub-panel" id="compare-section">
+        <div class="section-heading"><span class="section-index">05</span><div><p class="eyebrow">REMEDIATION</p><h2>Fix Comparison</h2></div></div>
+        <div class="stub-card">Validated alternatives and ranked risk reductions will appear here in the next dashboard pass.</div>
+      </section>
+
+      <section class="panel stub-panel" id="approval-section">
+        <div class="section-heading"><span class="section-index">06</span><div><p class="eyebrow">CONTROLLED CHANGE</p><h2>Approval / Evidence</h2></div></div>
+        <div class="stub-card">Human approvals and evidence bundles will appear here in the next dashboard pass.</div>
+      </section>
+    </main>
+
+    <footer>CADENCE <span>•</span> contract v1 <span>•</span> job <code id="job-id">default</code></footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

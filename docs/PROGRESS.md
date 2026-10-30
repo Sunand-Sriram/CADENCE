@@ -166,3 +166,11 @@
   `/api/ingest/{job_id}`, `/api/cbom`, `/api/risk`, `/api/quantum`,
   `/api/compare`, `/api/approve`, `/api/evidence/{asset_id}`) via `httpx`
   against `job_id="default"` and an ingested repository.
+
+## 2026-10-31 — Step 16 — frontend scaffold + live/mock toggle + CBOM panel
+
+- Created the vanilla single-page frontend with live API calls by default,
+  contract-shaped mock data, backend-unreachable messaging, and a rendered
+  CBOM table.
+- Verify result: frontend is runnable with `python -m http.server 5500` from
+  `frontend/`; remaining dashboard sections are labeled stubs for follow-up.
