@@ -149,3 +149,20 @@
   choices, and writes approved function patches outside the original repo.
 - Verify result: SHA256 was approved from the mock comparison at risk 66 -> 17;
   non-validating candidate approval was refused.
+
+## 2026-10-31 — Step 15 — repo ingest + FastAPI backend (API CONTRACT v1)
+
+- Implemented `crs_core/ingest.py` with `clone_repo(url)` for shallow-cloning
+  repositories (`git clone --depth 1`) into `workspace/<repo>/`, resolving the
+  pinned commit SHA via `git rev-parse HEAD`, reusing valid existing clones,
+  and raising `IngestError` on bad URLs or clone failures.
+- Implemented `crs_core/api.py` (FastAPI on `0.0.0.0:8900` with CORS enabled)
+  matching every endpoint path and field name in `docs/API_CONTRACT.md`,
+  pre-loading `job_id="default"` from `targets/target/`, filtering harness
+  stubs (`crypto_stubs.c`, `fuzz_harness.c`) from primary CBOM listings, and
+  wrapping `compare.py` and `approval.py`.
+- Verify result: started `uvicorn crs_core.api:app --host 0.0.0.0 --port 8900`
+  and verified all 9 contract endpoints (`/api/health`, `/api/ingest`,
+  `/api/ingest/{job_id}`, `/api/cbom`, `/api/risk`, `/api/quantum`,
+  `/api/compare`, `/api/approve`, `/api/evidence/{asset_id}`) via `httpx`
+  against `job_id="default"` and an ingested repository.
