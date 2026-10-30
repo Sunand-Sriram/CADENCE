@@ -181,3 +181,9 @@
   coral weak badges, and restrained rectangular controls.
 - Removed unbuilt sections and filler cards so only the header, ingest bar,
   quiet backend state, and real CBOM table render.
+
+## 2026-10-31 — Step 17 — risk panel
+
+- Added the data-driven Risk Assessment table below CBOM with score, severity
+  band, and rationale fields from `/api/risk?job_id=default`.
+- The panel is omitted when risk assessments are empty or unavailable.

@@ -29,6 +29,7 @@ button:hover { background: var(--navy); color: var(--sand); }
 .backend-message:empty { display: none; }
 .backend-message.offline { color: var(--coral); }
 #cbom-section { border-top: 1px solid var(--sand); padding-top: 21px; }
+#risk-section { border-top: 1px solid var(--sand); margin-top: 42px; padding-top: 21px; }
 .section-heading { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; }
 h2 { margin: 0; font-size: 1.05rem; letter-spacing: .04em; }
 .section-meta { color: var(--grey); font-size: .68rem; }
@@ -43,6 +44,12 @@ th:first-child, td:first-child { padding-left: 14px; }
 .badge { display: inline-block; border: 1px solid; border-radius: 3px; padding: 4px 7px; font-size: .62rem; letter-spacing: .04em; }
 .badge.weak { border-color: var(--coral); background: var(--coral); color: var(--navy); }
 .badge.safe { border-color: var(--green); color: var(--green); }
+.risk-score { color: var(--navy); font: 700 1.05rem var(--mono); }
+.risk-band { display: inline-block; border-left: 3px solid; padding: 3px 0 3px 9px; font: 700 .74rem var(--mono); }
+.risk-band.critical, .risk-band.high { border-color: var(--coral); color: var(--coral); }
+.risk-band.moderate { border-color: var(--sand); color: var(--navy); }
+.risk-band.low { border-color: var(--green); color: var(--green); }
+.rationale { color: var(--grey); }
 .empty-state { color: var(--grey); font: .78rem var(--mono); padding: 22px 0; }
 .error-state { color: var(--coral); }
 @media (max-width: 720px) {

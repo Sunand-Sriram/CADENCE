@@ -1,5 +1,5 @@
 const API_BASE = "http://localhost:8900";
-const USE_MOCK = false;
+const USE_MOCK = true;
 
 let currentJobId = "default";
 let mockDataPromise;
@@ -73,15 +73,41 @@ function renderCbom(payload) {
   </tr>`).join("") : `<tr><td colspan="5" class="empty-state">No cryptographic assets found.</td></tr>`;
 }
 
+function renderRisk(payload) {
+  document.querySelector("#risk-section")?.remove();
+  const assessments = payload?.assessments || [];
+  if (!assessments.length) return;
+
+  const section = document.createElement("section");
+  section.id = "risk-section";
+  section.innerHTML = `<div class="section-heading"><h2>Risk Assessment</h2><span class="section-meta">${assessments.length} ASSESSMENT${assessments.length === 1 ? "" : "S"}</span></div>
+    <div class="table-wrap"><table class="risk-table">
+      <thead><tr><th>Algorithm</th><th>Score</th><th>Band</th><th>Rationale</th></tr></thead>
+      <tbody>${assessments.map(assessment => `<tr>
+        <td><span class="algorithm">${escapeHtml(assessment.algorithm)}</span></td>
+        <td><span class="risk-score">${escapeHtml(assessment.score)}</span></td>
+        <td><span class="risk-band ${escapeHtml(String(assessment.band).toLowerCase())}">${escapeHtml(assessment.band)}</span></td>
+        <td class="rationale">${escapeHtml(assessment.rationale)}</td>
+      </tr>`).join("")}</tbody>
+    </table></div>`;
+  document.querySelector("#cbom-section").insertAdjacentElement("afterend", section);
+}
+
 async function loadDashboard() {
   setConnection("CONNECTING");
   try {
     const [healthData, status, assets] = await Promise.all([health(), ingestStatus(), cbom()]);
     renderCbom(assets);
+    try {
+      renderRisk(await risk());
+    } catch (error) {
+      renderRisk({ assessments: [] });
+    }
     setConnection(USE_MOCK ? "MOCK" : "LIVE");
   } catch (error) {
     setConnection("OFFLINE", "Backend unreachable — start the Kali API or set USE_MOCK = true for local demo data.");
     document.querySelector("#cbom-body").innerHTML = `<tr><td colspan="5" class="empty-state error-state">CBOM unavailable while backend is unreachable.</td></tr>`;
+    renderRisk({ assessments: [] });
   }
 }
 
