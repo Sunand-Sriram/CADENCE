@@ -317,11 +317,25 @@ def run_vincent_targeted(
     attempt: int,
     target_algorithm: str,
 ) -> PatchProposal:
-    """Reuse VINCENT while requiring one specific replacement algorithm."""
+    """Reuse VINCENT while requiring one specific replacement algorithm AND
+    preserving/applying the original memory-safety fix in the same patch.
+    The base prompt's "ultra-conservative, minimal change" instruction was
+    being misread as scoping the whole task down to the crypto swap alone,
+    silently dropping the original fix -- so this must state both
+    requirements as mandatory and explicitly forbid trading one for the
+    other."""
     targeted_diagnosis = diagnosis.model_copy(update={
         "root_cause": (
-            f"{diagnosis.root_cause}\n"
-            f"TARGETED INSTRUCTION: Replace the weak primitive with {target_algorithm} specifically."
+            f"{diagnosis.root_cause}\n\n"
+            f"ADDITIONAL REQUIREMENT -- this patch must fix BOTH of the following "
+            f"in the SAME function, not just one of them:\n"
+            f"1. The original memory-safety vulnerability described above (root "
+            f"cause), exactly as you would fix it on its own.\n"
+            f"2. Replace the weak cryptographic primitive with {target_algorithm} "
+            f"specifically -- it must no longer call the original weak primitive.\n\n"
+            f"Do NOT treat requirement 2 as a reason to skip, revert, or omit "
+            f"requirement 1. The returned patched_code must be the fully "
+            f"corrected function containing both fixes simultaneously."
         ),
     })
     return run_vincent(event, targeted_diagnosis, func_code, func_name, attempt)
@@ -336,7 +350,6 @@ def _preexec_harden() -> None:
 
         for limit_name, value in (
             ("RLIMIT_CPU", (120, 120)),
-            ("RLIMIT_AS", (2 * 1024 * 1024 * 1024, 2 * 1024 * 1024 * 1024)),
             ("RLIMIT_CORE", (0, 0)),
         ):
             try:
