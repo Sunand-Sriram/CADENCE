@@ -265,3 +265,7 @@
 
 - Increased CBOM, Risk, Quantum, and Fixes table text, header sizing, and cell padding while preserving tabular alignment and board styling.
 - Increased reasoning-trace and code-diff monospace text for readable detail review.
+
+## 2026-10-31 — Step 31 — default tab Overview
+
+- Changed the initial active navigation tab from CBOM to Overview without changing data loading or blank-canvas behavior.

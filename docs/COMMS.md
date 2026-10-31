@@ -18,6 +18,7 @@
 - 2026-10-31 — Centered the frontend container, expanded panel width, and increased projector-readable typography across the URL bar, tabs, and dashboard.
 - 2026-10-31 — Changed the frontend startup to a blank canvas until Analyze completes, with larger projector typography and responsive full-width alignment.
 - 2026-10-31 — Increased departure-board table cell/header text and detail-view monospace sizing for projector readability without changing layout or data behavior.
+- 2026-10-31 — Set Overview as the frontend’s default active tab while preserving the blank canvas until Analyze completes.
 
 ## KALI NOTES
 

@@ -6,7 +6,7 @@ let hasAnalysis = false;
 let mockDataPromise;
 let mockIngestStartedAt = 0;
 let mockIngestRepo = "";
-let activeTab = "cbom";
+let activeTab = "overview";
 let analyzeProgress = 0;
 
 async function mockData() {
@@ -543,4 +543,4 @@ async function startIngest(event) {
 
 document.querySelector("#ingest-form").addEventListener("submit", startIngest);
 document.querySelectorAll(".tab").forEach(button => button.addEventListener("click", () => setActiveTab(button.dataset.tab)));
-setActiveTab("cbom");
+setActiveTab("overview");
