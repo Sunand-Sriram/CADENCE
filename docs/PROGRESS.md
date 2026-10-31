@@ -250,3 +250,8 @@
 - Added evidence-backed Fixes detail views with Back to Fixes navigation and
   restored persisted comparisons on load using evidence reads only.
 - Added a concise Approval explanation without changing approval behavior.
+
+## 2026-10-31 — Step 28 — centered width + projector readability
+
+- Centered the frontend container at up to 1440px with balanced gutters so the URL bar, tabs, tables, and detail panels share one full-width layout.
+- Increased base, heading, table, and detail typography with more generous line-height and padding for projector readability.
