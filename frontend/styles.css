@@ -67,6 +67,7 @@ table { width: 100%; border-collapse: collapse; text-align: left; }
 #cbom-section table th:nth-child(3), #cbom-section table td:nth-child(3) { width: 16%; }
 #cbom-section table th:nth-child(4), #cbom-section table td:nth-child(4) { width: 12%; }
 #cbom-section table th:nth-child(5), #cbom-section table td:nth-child(5) { width: 38%; }
+#cbom-section table { min-width: 900px; }
 .risk-table th:nth-child(1), .risk-table td:nth-child(1) { width: 16%; }
 .risk-table th:nth-child(2), .risk-table td:nth-child(2) { width: 16%; }
 .risk-table th:nth-child(3), .risk-table td:nth-child(3) { width: 16%; }
@@ -74,6 +75,7 @@ table { width: 100%; border-collapse: collapse; text-align: left; }
 .risk-table th:nth-child(5), .risk-table td:nth-child(5) { width: 12%; }
 .risk-table th:nth-child(6), .risk-table td:nth-child(6) { width: 30%; }
 .risk-table th, .risk-table td { overflow-wrap: normal; word-break: normal; white-space: normal; }
+.risk-table { min-width: 1050px; }
 .risk-detail-button { padding: 9px 14px; font-size: .9rem; }
 .risk-detail-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; border-top: 1px solid var(--sand); border-bottom: 1px solid var(--sand); padding: 18px 0; }
 .risk-detail-summary p { margin: 0; color: var(--grey); }
@@ -92,16 +94,17 @@ table { width: 100%; border-collapse: collapse; text-align: left; }
 .quantum-table th:nth-child(5), .quantum-table td:nth-child(5) { width: 10%; text-align: center; }
 .quantum-table th:nth-child(6), .quantum-table td:nth-child(6) { width: 10%; }
 .quantum-table th:nth-child(7), .quantum-table td:nth-child(7) { width: 20%; }
-.fix-table th:nth-child(1), .fix-table td:nth-child(1) { width: 15%; }
-.fix-table th:nth-child(2), .fix-table td:nth-child(2) { width: 10%; }
-.fix-table th:nth-child(3), .fix-table td:nth-child(3) { width: 12%; }
-.fix-table th:nth-child(4), .fix-table td:nth-child(4) { width: 8%; text-align: center; }
-.fix-table th:nth-child(5), .fix-table td:nth-child(5) { width: 9%; text-align: center; }
-.fix-table th:nth-child(6), .fix-table td:nth-child(6) { width: 9%; text-align: center; }
-.fix-table th:nth-child(7), .fix-table td:nth-child(7) { width: 10%; text-align: center; }
-.fix-table th:nth-child(8), .fix-table td:nth-child(8) { width: 11%; text-align: center; }
-.fix-table th:nth-child(9), .fix-table td:nth-child(9) { width: 6%; text-align: center; }
-.fix-table th:nth-child(10), .fix-table td:nth-child(10) { width: 10%; }
+.quantum-table { min-width: 1100px; }
+.fix-table th:nth-child(1), .fix-table td:nth-child(1) { width: 20%; }
+.fix-table th:nth-child(2), .fix-table td:nth-child(2) { width: 10%; text-align: center; }
+.fix-table th:nth-child(3), .fix-table td:nth-child(3) { width: 10%; text-align: center; }
+.fix-table th:nth-child(4), .fix-table td:nth-child(4) { width: 10%; text-align: center; }
+.fix-table th:nth-child(5), .fix-table td:nth-child(5) { width: 10%; text-align: center; }
+.fix-table th:nth-child(6), .fix-table td:nth-child(6) { width: 15%; text-align: center; }
+.fix-table th:nth-child(7), .fix-table td:nth-child(7) { width: 7%; text-align: center; }
+.fix-table th:nth-child(8), .fix-table td:nth-child(8) { width: 18%; }
+.fix-table { min-width: 1120px; }
+.fix-table .test-result, .fix-table .risk-transition, .fix-table .risk-drop { white-space: nowrap; }
 .table-panel { border: 2px solid var(--navy); background: var(--cream); }
 .table-panel-header { background: var(--sand); color: var(--navy); padding: 17px 20px; font: 700 1.1rem var(--mono); letter-spacing: .16em; text-transform: uppercase; }
 .table-panel table { font-family: var(--mono); font-variant-numeric: tabular-nums; }

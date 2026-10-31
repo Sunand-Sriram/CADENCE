@@ -290,11 +290,9 @@ function renderQuantum(payload) {
 
 function candidateTable(asset, comparison) {
   return `<div class="table-panel"><div class="table-panel-header">Fix Candidates</div><div class="table-wrap"><table class="fix-table">
-    <thead><tr><th>Candidate</th><th>Asset ID</th><th>File:Line</th><th>Builds</th><th>Crash fixed</th><th>Regression</th><th>Crypto verified</th><th>Risk Before → After</th><th>Drop</th><th>Review / Approve</th></tr></thead>
+    <thead><tr><th>Candidate</th><th>Builds</th><th>Crash fixed</th><th>Regression</th><th>Crypto verified</th><th>Risk Before → After</th><th>Drop</th><th>Review / Approve</th></tr></thead>
     <tbody>${comparison.candidates.map(candidate => `<tr class="${candidate.target_algorithm === comparison.recommended ? "recommended" : ""}">
       <td><span class="algorithm">${escapeHtml(candidate.target_algorithm)}</span>${candidate.target_algorithm === comparison.recommended ? ` <span class="recommended-badge">Recommended</span>` : ""}${candidate.simulated ? ` <span class="simulated-badge">simulated</span>` : ""}${candidate.execution_failed ? `<small class="execution-note">execution failed</small>` : ""}${shortPatchHash(candidate) ? `<small class="patch-hash mono">${escapeHtml(shortPatchHash(candidate))}</small>` : ""}</td>
-      <td class="mono asset-id">${escapeHtml(asset.asset_id)}</td>
-      <td class="mono">${escapeHtml(asset.file_path)}:${escapeHtml(asset.line)}</td>
       <td>${testResult(candidate.builds)}</td>
       <td>${testResult(candidate.crash_fixed)}</td>
       <td>${testResult(candidate.regression_pass)}</td>

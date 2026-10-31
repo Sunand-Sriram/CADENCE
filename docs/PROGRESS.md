@@ -293,3 +293,8 @@
 
 - Widened CBOM Asset ID, File:Line, and Weakness columns; widened Risk metadata and detail columns.
 - Distributed Quantum threat, Mosca, urgency, and Recommended PQC columns for readable normal-word wrapping.
+
+## 2026-10-31 — Step 35 — fix Fixes candidate table overlap, remove redundant columns, size to fit
+
+- Removed repeated Asset ID and File:Line columns from per-candidate Fixes results because the asset header already identifies them.
+- Rebalanced candidate status/action columns and added safe minimum widths so values and controls remain inside their cells.
