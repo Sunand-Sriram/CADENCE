@@ -207,7 +207,7 @@ function renderRisk(payload) {
   section.id = "risk-section";
   section.className = "dashboard-section";
   section.innerHTML = `<div class="section-heading"><h2>Risk Assessment</h2><span class="section-meta">${assessments.length} ASSESSMENT${assessments.length === 1 ? "" : "S"}</span></div>
-    <div class="table-wrap"><table class="risk-table">
+    <div class="table-panel"><div class="table-panel-header">Risk Board</div><div class="table-wrap"><table class="risk-table">
       <thead><tr><th>Algorithm</th><th>Score</th><th>Band</th><th>Rationale</th></tr></thead>
       <tbody>${assessments.map(assessment => `<tr>
         <td><span class="algorithm">${escapeHtml(assetLabel(assessment.asset_id, assessment.algorithm))}</span><br>${assetTrace(assessment.asset_id)}</td>
@@ -215,7 +215,7 @@ function renderRisk(payload) {
         <td><span class="risk-band ${escapeHtml(String(assessment.band).toLowerCase())}">${escapeHtml(assessment.band)}</span></td>
         <td class="rationale"><div class="factor-breakdown">${Object.entries(assessment.factors || {}).map(([factor, value]) => `${escapeHtml(factor)} ${escapeHtml(value)}`).join(" · ")}</div>${escapeHtml(assessment.rationale)}</td>
       </tr>`).join("")}</tbody>
-    </table></div><p class="risk-caption">Weighted 0-100 model: weakness 35%, exposure 20%, data sensitivity 15%, lifetime 15%, feasibility 20%.</p>`;
+    </table></div></div><p class="risk-caption">Weighted 0-100 model: weakness 35%, exposure 20%, data sensitivity 15%, lifetime 15%, feasibility 20%.</p>`;
   document.querySelector("#cbom-section").insertAdjacentElement("afterend", section);
 }
 
@@ -228,7 +228,7 @@ function renderQuantum(payload) {
   section.id = "quantum-section";
   section.className = "dashboard-section";
   section.innerHTML = `<div class="section-heading"><h2>Quantum Risk (Mosca's Inequality)</h2><span class="section-meta">${assessments.length} ASSESSMENT${assessments.length === 1 ? "" : "S"}</span></div>
-    <div class="table-wrap"><table class="quantum-table">
+    <div class="table-panel"><div class="table-panel-header">Quantum Exposure</div><div class="table-wrap"><table class="quantum-table">
       <thead><tr><th>Algorithm</th><th>Quantum Threat</th><th>X+Y vs Z</th><th>Urgency</th><th>Recommended PQC</th></tr></thead>
       <tbody>${assessments.map(assessment => {
         const threat = assessment.shor_broken
@@ -245,13 +245,13 @@ function renderQuantum(payload) {
           <td class="recommended-pqc">${escapeHtml(assessment.recommended_pqc)}</td>
         </tr>`;
       }).join("")}</tbody>
-    </table></div>`;
+    </table></div></div>`;
   const riskSection = document.querySelector("#risk-section");
   (riskSection || document.querySelector("#cbom-section")).insertAdjacentElement("afterend", section);
 }
 
 function candidateTable(asset, comparison) {
-  return `<div class="table-wrap"><table class="fix-table">
+  return `<div class="table-panel"><div class="table-panel-header">Fix Candidates</div><div class="table-wrap"><table class="fix-table">
     <thead><tr><th>Candidate</th><th>Builds</th><th>Crash fixed</th><th>Regression</th><th>Crypto verified</th><th>Risk Before → After</th><th>Drop</th><th>Approve</th></tr></thead>
     <tbody>${comparison.candidates.map(candidate => `<tr class="${candidate.target_algorithm === comparison.recommended ? "recommended" : ""}">
       <td><span class="algorithm">${escapeHtml(candidate.target_algorithm)}</span>${candidate.target_algorithm === comparison.recommended ? ` <span class="recommended-badge">Recommended</span>` : ""}${candidate.simulated ? ` <span class="simulated-badge">simulated</span>` : ""}${candidate.execution_failed ? `<small class="execution-note">execution failed</small>` : ""}${shortPatchHash(candidate) ? `<small class="patch-hash mono">${escapeHtml(shortPatchHash(candidate))}</small>` : ""}</td>
@@ -263,7 +263,7 @@ function candidateTable(asset, comparison) {
       <td class="risk-drop">-${escapeHtml(Math.abs(candidate.risk_drop))}</td>
       <td>${candidate.validates ? `<button class="approve-button" type="button" data-asset-id="${escapeHtml(asset.asset_id)}" data-algorithm="${escapeHtml(candidate.target_algorithm)}">Approve</button>` : ""}</td>
     </tr>`).join("")}</tbody>
-  </table></div>
+  </table></div></div>
   <p class="approval-message" aria-live="polite"></p>`;
 }
 

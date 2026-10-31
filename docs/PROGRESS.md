@@ -236,3 +236,9 @@
   evidence-backed diagnosis, reasoning, patch, and validation review content.
 - Approval now surfaces backend refusal reasons, including HTTP 400 simulated-mode
   refusals, without showing a false success.
+
+## 2026-10-31 — Step 26 — departure-board table styling (vanilla, sharp corners, no live indicator)
+
+- Added navy-bordered table panels with sand uppercase header strips, monospace
+  tabular alignment, dashed row dividers, and semantic status colors.
+- Kept the existing light palette and removed any live indicator or animation.

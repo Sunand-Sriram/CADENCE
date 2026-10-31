@@ -11,6 +11,7 @@
 }
 
 * { box-sizing: border-box; }
+button, input, .badge, .recommended-badge, .simulated-badge, .table-panel { border-radius: 0; }
 body { margin: 0; background: var(--cream); color: var(--navy); font-family: var(--sans); }
 .shell { max-width: 1120px; margin: 0 auto; padding: 52px 28px 72px; }
 .topbar { display: grid; grid-template-columns: auto 1fr auto; align-items: end; gap: 30px; border-bottom: 1px solid var(--sand); padding-bottom: 16px; }
@@ -25,10 +26,10 @@ h1 { margin: 0; font: 700 clamp(2.25rem, 6vw, 4.5rem)/.95 var(--mono); letter-sp
 .progress-row { display: flex; justify-content: space-between; color: var(--grey); font: .68rem var(--mono); margin-bottom: 6px; }
 .progress-track { height: 5px; background: var(--sand); }
 .progress-fill { height: 100%; width: 0; background: var(--navy); transition: width .25s ease; }
-input { width: 100%; min-width: 0; background: var(--cream); color: var(--navy); border: 1px solid var(--sand); border-radius: 4px; padding: 14px 15px; font: .86rem var(--mono); outline: none; }
+input { width: 100%; min-width: 0; background: var(--cream); color: var(--navy); border: 1px solid var(--sand); border-radius: 0; padding: 14px 15px; font: .86rem var(--mono); outline: none; }
 input::placeholder { color: var(--grey); opacity: .8; }
 input:focus { border-color: var(--navy); }
-button { border: 1px solid var(--navy); border-radius: 4px; background: var(--navy); color: var(--cream); padding: 13px 22px; font: 700 .76rem var(--mono); cursor: pointer; }
+button { border: 1px solid var(--navy); border-radius: 0; background: var(--navy); color: var(--cream); padding: 13px 22px; font: 700 .76rem var(--mono); cursor: pointer; }
 button:hover { background: var(--navy); color: var(--sand); }
 .backend-message { min-height: 1.2em; margin: -25px 0 33px; color: var(--grey); font: .75rem var(--mono); }
 .backend-message:empty { display: none; }
@@ -53,14 +54,18 @@ h2 { margin: 0; font-size: 1.05rem; letter-spacing: .04em; }
 .section-meta { color: var(--grey); font-size: .68rem; }
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; text-align: left; }
-thead { background: var(--navy); color: var(--cream); }
-th { padding: 12px 14px; font-size: .66rem; font-weight: 500; letter-spacing: .06em; }
-td { border-bottom: 1px solid var(--sand); padding: 15px 14px; font-size: .82rem; }
+.table-panel { border: 2px solid var(--navy); background: var(--cream); }
+.table-panel-header { background: var(--sand); color: var(--navy); padding: 11px 14px; font: 700 .72rem var(--mono); letter-spacing: .16em; text-transform: uppercase; }
+.table-panel table { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.table-panel thead { background: transparent; color: var(--navy); }
+.table-panel th { padding: 13px 14px; border-bottom: 2px solid var(--navy); font-size: .66rem; font-weight: 700; letter-spacing: .06em; }
+.table-panel td { border-bottom: 0; padding: 16px 14px; font-size: .78rem; }
+.table-panel tbody tr:not(:last-child) td { border-bottom: 1px dashed var(--sand); }
 th:first-child, td:first-child { padding-left: 14px; }
 .algorithm { font-weight: 700; }
 .asset-id, td.mono { color: var(--grey); font-size: .75rem; }
 .asset-trace { color: var(--grey); font-size: .68rem; }
-.badge { display: inline-block; border: 1px solid; border-radius: 3px; padding: 4px 7px; font-size: .62rem; letter-spacing: .04em; }
+.badge { display: inline-block; border: 1px solid; border-radius: 0; padding: 4px 7px; font-size: .62rem; letter-spacing: .04em; }
 .badge.weak { border-color: var(--coral); background: var(--coral); color: var(--navy); }
 .badge.safe { border-color: var(--green); color: var(--green); }
 .weakness { font: 700 .72rem var(--mono); }
@@ -70,7 +75,7 @@ th:first-child, td:first-child { padding-left: 14px; }
 .risk-score { color: var(--navy); font: 700 1.05rem var(--mono); }
 .risk-band { display: inline-block; border-left: 3px solid; padding: 3px 0 3px 9px; font: 700 .74rem var(--mono); }
 .risk-band.critical, .risk-band.high { border-color: var(--coral); color: var(--coral); }
-.risk-band.moderate { border-color: var(--sand); color: var(--navy); }
+.risk-band.moderate { border-color: var(--sand); background: var(--sand); color: var(--navy); }
 .risk-band.low { border-color: var(--green); color: var(--green); }
 .rationale { color: var(--grey); }
 .factor-breakdown { margin-bottom: 5px; color: var(--navy); font: .68rem var(--mono); }
