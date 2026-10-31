@@ -67,24 +67,30 @@ table { width: 100%; border-collapse: collapse; text-align: left; }
 #cbom-section table th:nth-child(3), #cbom-section table td:nth-child(3) { width: 17%; }
 #cbom-section table th:nth-child(4), #cbom-section table td:nth-child(4) { width: 17%; }
 #cbom-section table th:nth-child(5), #cbom-section table td:nth-child(5) { width: 25%; }
-.risk-table th:nth-child(1), .risk-table td:nth-child(1) { width: 25%; }
-.risk-table th:nth-child(2), .risk-table td:nth-child(2) { width: 10%; text-align: center; }
-.risk-table th:nth-child(3), .risk-table td:nth-child(3) { width: 13%; }
-.risk-table th:nth-child(4), .risk-table td:nth-child(4) { width: 52%; }
+.risk-table th:nth-child(1), .risk-table td:nth-child(1) { width: 20%; }
+.risk-table th:nth-child(2), .risk-table td:nth-child(2) { width: 14%; }
+.risk-table th:nth-child(3), .risk-table td:nth-child(3) { width: 17%; }
+.risk-table th:nth-child(4), .risk-table td:nth-child(4) { width: 9%; text-align: center; }
+.risk-table th:nth-child(5), .risk-table td:nth-child(5) { width: 13%; }
+.risk-table th:nth-child(6), .risk-table td:nth-child(6) { width: 27%; }
 .risk-table .factor-breakdown, .risk-table .rationale { display: block; max-width: none; white-space: normal; }
-.quantum-table th:nth-child(1), .quantum-table td:nth-child(1) { width: 22%; }
-.quantum-table th:nth-child(2), .quantum-table td:nth-child(2) { width: 19%; }
-.quantum-table th:nth-child(3), .quantum-table td:nth-child(3) { width: 15%; text-align: center; }
-.quantum-table th:nth-child(4), .quantum-table td:nth-child(4) { width: 14%; }
-.quantum-table th:nth-child(5), .quantum-table td:nth-child(5) { width: 30%; }
-.fix-table th:nth-child(1), .fix-table td:nth-child(1) { width: 18%; }
-.fix-table th:nth-child(2), .fix-table td:nth-child(2) { width: 10%; text-align: center; }
-.fix-table th:nth-child(3), .fix-table td:nth-child(3) { width: 11%; text-align: center; }
-.fix-table th:nth-child(4), .fix-table td:nth-child(4) { width: 11%; text-align: center; }
-.fix-table th:nth-child(5), .fix-table td:nth-child(5) { width: 12%; text-align: center; }
-.fix-table th:nth-child(6), .fix-table td:nth-child(6) { width: 14%; text-align: center; }
-.fix-table th:nth-child(7), .fix-table td:nth-child(7) { width: 7%; text-align: center; }
-.fix-table th:nth-child(8), .fix-table td:nth-child(8) { width: 17%; }
+.quantum-table th:nth-child(1), .quantum-table td:nth-child(1) { width: 18%; }
+.quantum-table th:nth-child(2), .quantum-table td:nth-child(2) { width: 13%; }
+.quantum-table th:nth-child(3), .quantum-table td:nth-child(3) { width: 16%; }
+.quantum-table th:nth-child(4), .quantum-table td:nth-child(4) { width: 17%; }
+.quantum-table th:nth-child(5), .quantum-table td:nth-child(5) { width: 12%; text-align: center; }
+.quantum-table th:nth-child(6), .quantum-table td:nth-child(6) { width: 12%; }
+.quantum-table th:nth-child(7), .quantum-table td:nth-child(7) { width: 12%; }
+.fix-table th:nth-child(1), .fix-table td:nth-child(1) { width: 15%; }
+.fix-table th:nth-child(2), .fix-table td:nth-child(2) { width: 10%; }
+.fix-table th:nth-child(3), .fix-table td:nth-child(3) { width: 12%; }
+.fix-table th:nth-child(4), .fix-table td:nth-child(4) { width: 8%; text-align: center; }
+.fix-table th:nth-child(5), .fix-table td:nth-child(5) { width: 9%; text-align: center; }
+.fix-table th:nth-child(6), .fix-table td:nth-child(6) { width: 9%; text-align: center; }
+.fix-table th:nth-child(7), .fix-table td:nth-child(7) { width: 10%; text-align: center; }
+.fix-table th:nth-child(8), .fix-table td:nth-child(8) { width: 11%; text-align: center; }
+.fix-table th:nth-child(9), .fix-table td:nth-child(9) { width: 6%; text-align: center; }
+.fix-table th:nth-child(10), .fix-table td:nth-child(10) { width: 10%; }
 .table-panel { border: 2px solid var(--navy); background: var(--cream); }
 .table-panel-header { background: var(--sand); color: var(--navy); padding: 17px 20px; font: 700 1.1rem var(--mono); letter-spacing: .16em; text-transform: uppercase; }
 .table-panel table { font-family: var(--mono); font-variant-numeric: tabular-nums; }

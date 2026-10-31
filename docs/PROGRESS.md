@@ -278,3 +278,8 @@
 
 - Added fixed, proportioned layouts for CBOM, Risk, Quantum, and Fixes tables with consistent alignment and wrapping.
 - Tightened weak-asset Fixes headers so the asset label and Compare fixes control share one compact row.
+
+## 2026-10-31 — Step 33 — remove duplicated columns + proportion CBOM/Risk/Quantum/Fixes tables
+
+- Removed duplicate ID and file-location content from readable algorithm labels and added dedicated metadata columns where needed.
+- Rebalanced all four table layouts so distinct data fills the available width cleanly.

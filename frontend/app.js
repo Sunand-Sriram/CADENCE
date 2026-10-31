@@ -173,6 +173,11 @@ function assetLabel(assetId, algorithm = "Asset") {
   return `${asset.algorithm || algorithm} #${asset.index} — ${asset.file_path}:${asset.line}`;
 }
 
+function assetReadableLabel(assetId, algorithm = "Asset") {
+  const asset = assetDetailsById.get(assetId);
+  return `${asset?.algorithm || algorithm} #${asset?.index || "?"}`;
+}
+
 function assetTrace(assetId) {
   return `<span class="asset-trace mono">${escapeHtml(assetId)}</span>`;
 }
@@ -190,7 +195,7 @@ function renderCbom(payload) {
   registerAssets(assets);
   document.querySelector("#asset-count").textContent = `${assets.length} ASSET${assets.length === 1 ? "" : "S"}`;
   document.querySelector("#cbom-body").innerHTML = assets.length ? assets.map(asset => `<tr>
-    <td><span class="algorithm">${escapeHtml(assetLabel(asset.asset_id))}</span><br>${assetTrace(asset.asset_id)}</td>
+    <td><span class="algorithm">${escapeHtml(assetReadableLabel(asset.asset_id))}</span></td>
     <td class="mono asset-id">${escapeHtml(asset.asset_id)}</td>
     <td class="mono">${escapeHtml(asset.file_path)}:${escapeHtml(asset.line)}</td>
     <td>${escapeHtml(asset.operation)}</td>
@@ -209,9 +214,11 @@ function renderRisk(payload) {
   section.className = "dashboard-section";
   section.innerHTML = `<div class="section-heading"><h2>Risk Assessment</h2><span class="section-meta">${assessments.length} ASSESSMENT${assessments.length === 1 ? "" : "S"}</span></div>
     <div class="table-panel"><div class="table-panel-header">Risk Board</div><div class="table-wrap"><table class="risk-table">
-      <thead><tr><th>Algorithm</th><th>Score</th><th>Band</th><th>Rationale</th></tr></thead>
+      <thead><tr><th>Algorithm</th><th>Asset ID</th><th>File:Line</th><th>Score</th><th>Band</th><th>Factors / Rationale</th></tr></thead>
       <tbody>${assessments.map(assessment => `<tr>
-        <td><span class="algorithm">${escapeHtml(assetLabel(assessment.asset_id, assessment.algorithm))}</span><br>${assetTrace(assessment.asset_id)}</td>
+        <td><span class="algorithm">${escapeHtml(assetReadableLabel(assessment.asset_id, assessment.algorithm))}</span></td>
+        <td class="mono asset-id">${escapeHtml(assessment.asset_id)}</td>
+        <td class="mono">${escapeHtml(assetDetailsById.get(assessment.asset_id)?.file_path || "—")}:${escapeHtml(assetDetailsById.get(assessment.asset_id)?.line || "—")}</td>
         <td><span class="risk-score">${escapeHtml(assessment.score)}</span></td>
         <td><span class="risk-band ${escapeHtml(String(assessment.band).toLowerCase())}">${escapeHtml(assessment.band)}</span></td>
         <td class="rationale"><div class="factor-breakdown">${Object.entries(assessment.factors || {}).map(([factor, value]) => `${escapeHtml(factor)} ${escapeHtml(value)}`).join(" · ")}</div>${escapeHtml(assessment.rationale)}</td>
@@ -230,7 +237,7 @@ function renderQuantum(payload) {
   section.className = "dashboard-section";
   section.innerHTML = `<div class="section-heading"><h2>Quantum Risk (Mosca's Inequality)</h2><span class="section-meta">${assessments.length} ASSESSMENT${assessments.length === 1 ? "" : "S"}</span></div>
     <div class="table-panel"><div class="table-panel-header">Quantum Exposure</div><div class="table-wrap"><table class="quantum-table">
-      <thead><tr><th>Algorithm</th><th>Quantum Threat</th><th>X+Y vs Z</th><th>Urgency</th><th>Recommended PQC</th></tr></thead>
+      <thead><tr><th>Algorithm</th><th>Asset ID</th><th>File:Line</th><th>Quantum Threat</th><th>X+Y vs Z</th><th>Urgency</th><th>Recommended PQC</th></tr></thead>
       <tbody>${assessments.map(assessment => {
         const threat = assessment.shor_broken
           ? `<span class="quantum-threat shor">Shor (broken)</span>`
@@ -239,7 +246,9 @@ function renderQuantum(payload) {
             : `<span class="quantum-threat none">—</span>`;
         const comparison = `${assessment.mosca_x}+${assessment.mosca_y} ${assessment.mosca_x + assessment.mosca_y > assessment.mosca_z ? ">" : "<="} ${assessment.mosca_z}`;
         return `<tr class="${assessment.mosca_at_risk ? "at-risk" : ""}">
-          <td><span class="algorithm">${escapeHtml(assessment.algorithm)}</span></td>
+          <td><span class="algorithm">${escapeHtml(assetReadableLabel(assessment.asset_id, assessment.algorithm))}</span></td>
+          <td class="mono asset-id">${escapeHtml(assessment.asset_id)}</td>
+          <td class="mono">${escapeHtml(assetDetailsById.get(assessment.asset_id)?.file_path || "—")}:${escapeHtml(assetDetailsById.get(assessment.asset_id)?.line || "—")}</td>
           <td>${threat}</td>
           <td class="mono">${escapeHtml(comparison)}</td>
           <td><span class="urgency ${escapeHtml(String(assessment.urgency).toLowerCase())}">${escapeHtml(assessment.urgency)}</span></td>
@@ -253,9 +262,11 @@ function renderQuantum(payload) {
 
 function candidateTable(asset, comparison) {
   return `<div class="table-panel"><div class="table-panel-header">Fix Candidates</div><div class="table-wrap"><table class="fix-table">
-    <thead><tr><th>Candidate</th><th>Builds</th><th>Crash fixed</th><th>Regression</th><th>Crypto verified</th><th>Risk Before → After</th><th>Drop</th><th>Review / Approve</th></tr></thead>
+    <thead><tr><th>Candidate</th><th>Asset ID</th><th>File:Line</th><th>Builds</th><th>Crash fixed</th><th>Regression</th><th>Crypto verified</th><th>Risk Before → After</th><th>Drop</th><th>Review / Approve</th></tr></thead>
     <tbody>${comparison.candidates.map(candidate => `<tr class="${candidate.target_algorithm === comparison.recommended ? "recommended" : ""}">
       <td><span class="algorithm">${escapeHtml(candidate.target_algorithm)}</span>${candidate.target_algorithm === comparison.recommended ? ` <span class="recommended-badge">Recommended</span>` : ""}${candidate.simulated ? ` <span class="simulated-badge">simulated</span>` : ""}${candidate.execution_failed ? `<small class="execution-note">execution failed</small>` : ""}${shortPatchHash(candidate) ? `<small class="patch-hash mono">${escapeHtml(shortPatchHash(candidate))}</small>` : ""}</td>
+      <td class="mono asset-id">${escapeHtml(asset.asset_id)}</td>
+      <td class="mono">${escapeHtml(asset.file_path)}:${escapeHtml(asset.line)}</td>
       <td>${testResult(candidate.builds)}</td>
       <td>${testResult(candidate.crash_fixed)}</td>
       <td>${testResult(candidate.regression_pass)}</td>
@@ -325,7 +336,7 @@ function renderFixComparisons(payload) {
   section.className = "dashboard-section";
   section.innerHTML = `<div class="section-heading"><h2>Fix Alternatives</h2><span class="section-meta">${assets.length} WEAK ASSET${assets.length === 1 ? "" : "S"}</span></div>
     ${assets.map(asset => `<article class="fix-asset" data-asset-id="${escapeHtml(asset.asset_id)}">
-      <h3>${escapeHtml(assetLabel(asset.asset_id))} <span>— candidate fixes</span> ${assetTrace(asset.asset_id)}</h3>
+      <h3>${escapeHtml(assetReadableLabel(asset.asset_id))} <span>— ${escapeHtml(asset.file_path)}:${escapeHtml(asset.line)} · ${assetTrace(asset.asset_id)} · candidate fixes</span></h3>
       <div class="compare-controls"><button class="compare-button" type="button">Compare fixes</button><span class="compare-status" aria-live="polite"></span><span class="compare-percent" hidden>0%</span></div>
       <div class="progress-track compare-progress" hidden><div class="progress-fill"></div></div>
       <div class="compare-results"></div>
