@@ -260,3 +260,8 @@
 
 - Removed the automatic default-job fetch on page load; panels remain empty until a repository Analyze job completes.
 - Increased the frontend typography again and kept the centered container/panels responsive across laptop and projector widths.
+
+## 2026-10-31 — Step 30 — larger table cell text
+
+- Increased CBOM, Risk, Quantum, and Fixes table text, header sizing, and cell padding while preserving tabular alignment and board styling.
+- Increased reasoning-trace and code-diff monospace text for readable detail review.

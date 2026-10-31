@@ -60,8 +60,8 @@ table { width: 100%; border-collapse: collapse; text-align: left; }
 .table-panel-header { background: var(--sand); color: var(--navy); padding: 17px 20px; font: 700 1rem var(--mono); letter-spacing: .16em; text-transform: uppercase; }
 .table-panel table { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .table-panel thead { background: transparent; color: var(--navy); }
-.table-panel th { padding: 18px 22px; border-bottom: 2px solid var(--navy); font-size: 1rem; font-weight: 700; letter-spacing: .06em; line-height: 1.45; }
-.table-panel td { border-bottom: 0; padding: 25px 22px; font-size: 1.06rem; line-height: 1.6; }
+.table-panel th { padding: 14px 24px; border-bottom: 2px solid var(--navy); font-size: 1.08rem; font-weight: 700; letter-spacing: .06em; line-height: 1.45; }
+.table-panel td { border-bottom: 0; padding: 13px 24px; font-size: 1.125rem; line-height: 1.6; }
 .table-panel tbody tr:not(:last-child) td { border-bottom: 1px dashed var(--sand); }
 th:first-child, td:first-child { padding-left: 14px; }
 .algorithm { font-weight: 700; }
@@ -103,8 +103,8 @@ th:first-child, td:first-child { padding-left: 14px; }
 .compare-percent { color: var(--grey); font: .68rem var(--mono); }
 .compare-progress { margin-top: 10px; max-width: 560px; }
 .fix-table tr.recommended td:first-child { border-left: 3px solid var(--sand); padding-left: 11px; }
-.fix-table td { padding: 17px 14px; font-size: .98rem; }
-.fix-table th { padding: 16px 14px; font-size: .88rem; }
+.fix-table td { padding: 13px 18px; font-size: 1.125rem; }
+.fix-table th { padding: 14px 18px; font-size: 1rem; }
 .recommended-badge { display: inline-block; background: var(--sand); color: var(--navy); padding: 3px 6px; font: 700 .61rem var(--mono); }
 .test-result, .risk-drop { font: 700 .72rem var(--mono); }
 .test-result.pass { color: var(--green); }
@@ -130,7 +130,7 @@ th:first-child, td:first-child { padding-left: 14px; }
 .review-block strong { color: var(--navy); font-family: var(--mono); font-size: .7rem; }
 .reasoning-block { margin-top: 22px; border-top: 1px solid var(--sand); padding-top: 16px; }
 .reasoning-block summary { color: var(--navy); cursor: pointer; font: 700 .78rem var(--mono); }
-.reasoning-block pre, .patch-columns pre { max-height: 260px; overflow: auto; margin: 12px 0 0; padding: 12px; border: 1px solid var(--sand); background: transparent; color: var(--grey); font: .72rem/1.5 var(--mono); white-space: pre-wrap; }
+.reasoning-block pre, .patch-columns pre { max-height: 260px; overflow: auto; margin: 12px 0 0; padding: 14px; border: 1px solid var(--sand); background: transparent; color: var(--grey); font: 1rem/1.6 var(--mono); white-space: pre-wrap; }
 .patch-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .review-tests { display: flex; flex-wrap: wrap; gap: 16px; color: var(--navy); font: .72rem var(--mono); }
 .empty-state { color: var(--grey); font: .78rem var(--mono); padding: 22px 0; }
