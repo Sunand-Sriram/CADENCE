@@ -24,11 +24,25 @@
             <button type="submit">Analyze</button>
           </div>
         </form>
+        <div id="analyze-progress" class="progress-wrap" hidden>
+          <div class="progress-row"><span id="analyze-progress-label">Analyzing</span><span id="analyze-progress-percent">0%</span></div>
+          <div class="progress-track"><div id="analyze-progress-fill" class="progress-fill"></div></div>
+        </div>
       </section>
 
       <p id="backend-message" class="backend-message" role="status" aria-live="polite"></p>
 
-      <section id="cbom-section">
+      <nav id="tab-bar" class="tab-bar" aria-label="Dashboard sections">
+        <button class="tab" type="button" data-tab="overview">Overview</button>
+        <button class="tab active" type="button" data-tab="cbom">CBOM</button>
+        <button class="tab" type="button" data-tab="risk">Risk</button>
+        <button class="tab" type="button" data-tab="quantum">Quantum</button>
+        <button class="tab" type="button" data-tab="fixes">Fixes</button>
+        <button class="tab" type="button" data-tab="approval">Approval</button>
+      </nav>
+
+      <div id="dashboard-sections">
+      <section id="cbom-section" class="dashboard-section">
         <div class="section-heading"><h2>CBOM</h2><span id="asset-count" class="section-meta">— ASSETS</span></div>
         <div class="table-wrap">
           <table>
@@ -37,6 +51,7 @@
           </table>
         </div>
       </section>
+      </div>
     </main>
   </div>
   <script src="app.js"></script>

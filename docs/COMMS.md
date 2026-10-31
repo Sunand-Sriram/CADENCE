@@ -10,6 +10,7 @@
 - 2026-10-31 — Added the Fix Alternatives comparison and approval panel; the Approve button is wired to `POST /api/approve`.
 - 2026-10-31 — Wired the ingest bar to `POST /api/ingest`, status polling, and panel refresh using the active `job_id`.
 - 2026-10-31 — Updated the compare panel for on-demand fetches with a loading state suited to live LLM latency.
+- 2026-10-31 — Added tabbed frontend navigation, stage-driven Analyze progress, bounded Compare progress, and removed latency-specific copy.
 
 ## KALI NOTES
 

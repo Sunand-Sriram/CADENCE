@@ -213,3 +213,10 @@
   Compare fixes button is clicked, keeping the page interactive during inference.
 - Added a 240-second live comparison timeout and retryable inline failure state;
   mock comparisons remain immediate.
+
+## 2026-10-31 — Step 22 — tabs + progress bars + remove latency copy
+
+- Added Overview, CBOM, Risk, Quantum, Fixes, and Approval tabs with only the
+  active built section visible.
+- Added stage-driven Analyze progress and bounded per-asset Compare progress;
+  Compare reaches 100% only when its real response arrives.

@@ -5,6 +5,8 @@ let currentJobId = "default";
 let mockDataPromise;
 let mockIngestStartedAt = 0;
 let mockIngestRepo = "";
+let activeTab = "cbom";
+let analyzeProgress = 0;
 
 async function mockData() {
   if (!mockDataPromise) mockDataPromise = fetch("mock-data.json").then(response => response.json());
@@ -92,6 +94,42 @@ function setConnection(state, message = "") {
   banner.className = `backend-message ${message ? "visible" : ""} ${state.toLowerCase()}`;
 }
 
+function setActiveTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll(".tab").forEach(button => {
+    const selected = button.dataset.tab === tab;
+    button.classList.toggle("active", selected);
+    button.setAttribute("aria-selected", selected ? "true" : "false");
+  });
+  const sectionByTab = { overview: "overview-section", cbom: "cbom-section", risk: "risk-section", quantum: "quantum-section", fixes: "fix-section", approval: "approval-section" };
+  document.querySelectorAll("#dashboard-sections > section").forEach(section => {
+    section.hidden = section.id !== sectionByTab[tab];
+  });
+}
+
+function updateAnalyzeProgress(percent, label) {
+  analyzeProgress = Math.max(0, Math.min(100, percent));
+  document.querySelector("#analyze-progress").hidden = false;
+  document.querySelector("#analyze-progress-label").textContent = label;
+  document.querySelector("#analyze-progress-percent").textContent = `${analyzeProgress}%`;
+  document.querySelector("#analyze-progress-fill").style.width = `${analyzeProgress}%`;
+}
+
+function hideAnalyzeProgress() {
+  document.querySelector("#analyze-progress").hidden = true;
+}
+
+function renderOverview(status, assets, quantumPayload) {
+  document.querySelector("#overview-section")?.remove();
+  const assetList = assets?.assets || [];
+  const quantumAtRisk = (quantumPayload?.assessments || []).filter(assessment => assessment.mosca_at_risk).length;
+  const section = document.createElement("section");
+  section.id = "overview-section";
+  section.className = "dashboard-section";
+  section.innerHTML = `<div class="section-heading"><h2>Overview</h2></div><p class="overview-summary">Repo: ${escapeHtml(status?.repo || "—")} · Commit: ${escapeHtml(status?.commit || "—")} · Assets: ${assetList.length} · Weak: ${assetList.filter(asset => asset.is_weak).length} · Quantum at risk: ${quantumAtRisk}</p>`;
+  document.querySelector("#dashboard-sections").insertAdjacentElement("afterbegin", section);
+}
+
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[character]));
 }
@@ -115,6 +153,7 @@ function renderRisk(payload) {
 
   const section = document.createElement("section");
   section.id = "risk-section";
+  section.className = "dashboard-section";
   section.innerHTML = `<div class="section-heading"><h2>Risk Assessment</h2><span class="section-meta">${assessments.length} ASSESSMENT${assessments.length === 1 ? "" : "S"}</span></div>
     <div class="table-wrap"><table class="risk-table">
       <thead><tr><th>Algorithm</th><th>Score</th><th>Band</th><th>Rationale</th></tr></thead>
@@ -135,6 +174,7 @@ function renderQuantum(payload) {
 
   const section = document.createElement("section");
   section.id = "quantum-section";
+  section.className = "dashboard-section";
   section.innerHTML = `<div class="section-heading"><h2>Quantum Risk (Mosca's Inequality)</h2><span class="section-meta">${assessments.length} ASSESSMENT${assessments.length === 1 ? "" : "S"}</span></div>
     <div class="table-wrap"><table class="quantum-table">
       <thead><tr><th>Algorithm</th><th>Quantum Threat</th><th>X+Y vs Z</th><th>Urgency</th><th>Recommended PQC</th></tr></thead>
@@ -179,15 +219,36 @@ function attachApprovalButtons(container) {
 async function loadComparison(asset, article, button, status) {
   button.disabled = true;
   status.className = "compare-status loading";
-  status.textContent = "Generating and validating fixes with local models… (this runs real LLM inference, ~1-2 min)";
+  status.textContent = "Generating and validating fixes…";
+  const progress = article.querySelector(".compare-progress");
+  const fill = progress.querySelector(".progress-fill");
+  const percent = article.querySelector(".compare-percent");
+  const startedAt = Date.now();
+  progress.hidden = false;
+  percent.hidden = false;
+  const update = () => {
+    const value = Math.min(90, Math.round(90 * (1 - Math.exp(-(Date.now() - startedAt) / 30000))));
+    fill.style.width = `${value}%`;
+    percent.textContent = `${value}%`;
+  };
+  update();
+  const timer = setInterval(update, 1000);
   try {
     const comparison = await compare(asset.asset_id);
     if (!comparison?.candidates?.length) throw new Error("no candidates returned");
+    clearInterval(timer);
+    fill.style.width = "100%";
+    percent.textContent = "100%";
     status.textContent = "";
     status.className = "compare-status";
-    article.querySelector(".compare-results") .innerHTML = candidateTable(asset, comparison);
+    progress.hidden = true;
+    percent.hidden = true;
+    article.querySelector(".compare-results").innerHTML = candidateTable(asset, comparison);
     attachApprovalButtons(article);
   } catch (error) {
+    clearInterval(timer);
+    progress.hidden = true;
+    percent.hidden = true;
     status.className = "compare-status failed";
     status.textContent = `Fix generation failed — ${error.message || "request could not be completed"}`;
     button.disabled = false;
@@ -201,10 +262,12 @@ function renderFixComparisons(payload) {
 
   const section = document.createElement("section");
   section.id = "fix-section";
+  section.className = "dashboard-section";
   section.innerHTML = `<div class="section-heading"><h2>Fix Alternatives</h2><span class="section-meta">${assets.length} WEAK ASSET${assets.length === 1 ? "" : "S"}</span></div>
     ${assets.map(asset => `<article class="fix-asset" data-asset-id="${escapeHtml(asset.asset_id)}">
       <h3>${escapeHtml(asset.algorithm)} <span>— candidate fixes</span></h3>
-      <div class="compare-controls"><button class="compare-button" type="button">Compare fixes</button><span class="compare-status" aria-live="polite"></span></div>
+      <div class="compare-controls"><button class="compare-button" type="button">Compare fixes</button><span class="compare-status" aria-live="polite"></span><span class="compare-percent" hidden>0%</span></div>
+      <div class="progress-track compare-progress" hidden><div class="progress-fill"></div></div>
       <div class="compare-results"></div>
     </article>`).join("")}`;
   section.querySelectorAll(".fix-asset").forEach((article, index) => {
@@ -231,6 +294,7 @@ async function handleApproval(event) {
         candidateButton.disabled = candidateButton !== button;
       });
       button.textContent = "Approved";
+      renderApproval(assetId, algorithm, result);
     } else {
       message.className = "approval-message refused";
       message.textContent = "Approval refused";
@@ -243,6 +307,16 @@ async function handleApproval(event) {
   }
 }
 
+function renderApproval(assetId, algorithm, result) {
+  document.querySelector("#approval-section")?.remove();
+  const section = document.createElement("section");
+  section.id = "approval-section";
+  section.className = "dashboard-section";
+  section.innerHTML = `<div class="section-heading"><h2>Approval</h2></div><p class="approval-summary">Approved ${escapeHtml(algorithm)} for ${escapeHtml(assetId)} — risk ${escapeHtml(result.risk_before)} -> ${escapeHtml(result.risk_after)}</p>`;
+  document.querySelector("#dashboard-sections").appendChild(section);
+  setActiveTab(activeTab);
+}
+
 function wait(milliseconds) {
   return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
@@ -252,43 +326,60 @@ async function pollIngest(jobId, repo) {
     const status = await ingestStatus(jobId);
     if (status.status === "done") {
       currentJobId = status.job_id || jobId;
-      await loadDashboard();
+      const loaded = await loadDashboard(true);
+      if (!loaded) return;
+      updateAnalyzeProgress(100, "Analysis complete");
+      hideAnalyzeProgress();
       const shortCommit = status.commit ? ` @ ${String(status.commit).slice(0, 7)}` : "";
       setConnection(USE_MOCK ? "MOCK" : "LIVE", `Analyzed ${status.repo || repo}${shortCommit}`);
       return;
     }
     if (status.status === "error") {
+      updateAnalyzeProgress(analyzeProgress, "Analysis failed");
       setConnection("ERROR", `Analysis failed — ${status.error || "unknown error"}`);
       return;
     }
+    updateAnalyzeProgress(25, "Repository accepted; waiting for scan…");
     setConnection("INGESTING", `Cloning and scanning ${status.repo || repo}…`);
     await wait(1500);
   }
 }
 
-async function loadDashboard() {
+async function loadDashboard(withProgress = false) {
   setConnection("CONNECTING");
   try {
     const [healthData, status, assets] = await Promise.all([health(), ingestStatus(), cbom()]);
     renderCbom(assets);
+    if (withProgress) updateAnalyzeProgress(50, "CBOM loaded");
+    let riskPayload = { assessments: [] };
     try {
-      renderRisk(await risk());
+      riskPayload = await risk();
+      renderRisk(riskPayload);
     } catch (error) {
       renderRisk({ assessments: [] });
     }
+    if (withProgress) updateAnalyzeProgress(75, "Risk loaded");
+    let quantumPayload = { assessments: [] };
     try {
-      renderQuantum(await quantum());
+      quantumPayload = await quantum();
+      renderQuantum(quantumPayload);
     } catch (error) {
       renderQuantum({ assessments: [] });
     }
     renderFixComparisons(assets);
+    renderOverview(status, assets, quantumPayload);
+    setActiveTab(activeTab);
+    if (withProgress) updateAnalyzeProgress(100, "Quantum loaded");
     setConnection(USE_MOCK ? "MOCK" : "LIVE");
+    return true;
   } catch (error) {
+    if (withProgress) updateAnalyzeProgress(analyzeProgress, "Analysis failed");
     setConnection("OFFLINE", "Backend unreachable — start the Kali API or set USE_MOCK = true for local demo data.");
     document.querySelector("#cbom-body").innerHTML = `<tr><td colspan="5" class="empty-state error-state">CBOM unavailable while backend is unreachable.</td></tr>`;
     renderRisk({ assessments: [] });
     renderQuantum({ assessments: [] });
     renderFixComparisons({ assets: [] });
+    return false;
   }
 }
 
@@ -297,6 +388,7 @@ async function startIngest(event) {
   const url = document.querySelector("#repo-url").value.trim();
   if (!url) return setConnection("READY", "Enter a GitHub URL to start analysis.");
   if (!/^https?:\/\/\S+$/i.test(url)) return setConnection("READY", "Enter a valid repository URL.");
+  updateAnalyzeProgress(0, "Starting analysis");
   setConnection("INGESTING", `Cloning and scanning ${url}…`);
   try {
     const started = await ingest(url);
@@ -307,4 +399,6 @@ async function startIngest(event) {
 }
 
 document.querySelector("#ingest-form").addEventListener("submit", startIngest);
+document.querySelectorAll(".tab").forEach(button => button.addEventListener("click", () => setActiveTab(button.dataset.tab)));
+setActiveTab("cbom");
 loadDashboard();
