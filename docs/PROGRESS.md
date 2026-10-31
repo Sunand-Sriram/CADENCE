@@ -255,3 +255,8 @@
 
 - Centered the frontend container at up to 1440px with balanced gutters so the URL bar, tabs, tables, and detail panels share one full-width layout.
 - Increased base, heading, table, and detail typography with more generous line-height and padding for projector readability.
+
+## 2026-10-31 — Step 29 — blank canvas until analyze, larger fonts, responsive fit
+
+- Removed the automatic default-job fetch on page load; panels remain empty until a repository Analyze job completes.
+- Increased the frontend typography again and kept the centered container/panels responsive across laptop and projector widths.

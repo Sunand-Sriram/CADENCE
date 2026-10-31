@@ -1,7 +1,8 @@
 const API_BASE = "http://10.80.58.202:8900";
 const USE_MOCK = false;
 
-let currentJobId = "default";
+let currentJobId = null;
+let hasAnalysis = false;
 let mockDataPromise;
 let mockIngestStartedAt = 0;
 let mockIngestRepo = "";
@@ -114,7 +115,7 @@ function setActiveTab(tab) {
   });
   const sectionByTab = { overview: "overview-section", cbom: "cbom-section", risk: "risk-section", quantum: "quantum-section", fixes: "fix-section", approval: "approval-section" };
   document.querySelectorAll("#dashboard-sections > section").forEach(section => {
-    section.hidden = section.id !== sectionByTab[tab];
+    section.hidden = !hasAnalysis || section.id !== sectionByTab[tab];
   });
 }
 
@@ -487,6 +488,8 @@ async function loadDashboard(withProgress = false) {
   setConnection("CONNECTING");
   try {
     const [healthData, status, assets] = await Promise.all([health(), ingestStatus(), cbom()]);
+    hasAnalysis = true;
+    document.querySelector("#initial-state").hidden = true;
     renderCbom(assets);
     if (withProgress) updateAnalyzeProgress(50, "CBOM loaded");
     let riskPayload = { assessments: [] };
@@ -531,7 +534,8 @@ async function startIngest(event) {
   setConnection("INGESTING", `Cloning and scanning ${url}…`);
   try {
     const started = await ingest(url);
-    await pollIngest(started.job_id || "default", started.repo || url);
+    if (!started.job_id) throw new Error("ingest did not return a job_id");
+    await pollIngest(started.job_id, started.repo || url);
   } catch (error) {
     setConnection("OFFLINE", "Backend unreachable — the ingest request could not be completed.");
   }
@@ -540,4 +544,3 @@ async function startIngest(event) {
 document.querySelector("#ingest-form").addEventListener("submit", startIngest);
 document.querySelectorAll(".tab").forEach(button => button.addEventListener("click", () => setActiveTab(button.dataset.tab)));
 setActiveTab("cbom");
-loadDashboard();

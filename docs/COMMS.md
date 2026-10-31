@@ -16,6 +16,7 @@
 - 2026-10-31 — Restyled CBOM, Risk, Quantum, and Fixes tables as sharp-corner departure-board panels using the existing light palette.
 - 2026-10-31 — Increased frontend readability, added persisted evidence restoration and Fixes detail navigation, and clarified Approval review.
 - 2026-10-31 — Centered the frontend container, expanded panel width, and increased projector-readable typography across the URL bar, tabs, and dashboard.
+- 2026-10-31 — Changed the frontend startup to a blank canvas until Analyze completes, with larger projector typography and responsive full-width alignment.
 
 ## KALI NOTES
 
