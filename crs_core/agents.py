@@ -337,7 +337,6 @@ def _preexec_harden() -> None:
         for limit_name, value in (
             ("RLIMIT_CPU", (120, 120)),
             ("RLIMIT_AS", (2 * 1024 * 1024 * 1024, 2 * 1024 * 1024 * 1024)),
-            ("RLIMIT_NPROC", (256, 256)),
             ("RLIMIT_CORE", (0, 0)),
         ):
             try:

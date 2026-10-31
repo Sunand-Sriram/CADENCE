@@ -17,7 +17,7 @@ def _crypto_replaced(original_algorithm: str, target_algorithm: str, patched_cod
     old_name = re.escape(original_algorithm.split("-")[0])
     new_name = re.escape(target_algorithm.split("-")[0])
     old_present = re.search(rf"\b{old_name}\b", patched_code, re.IGNORECASE)
-    new_present = re.search(rf"\b{new_name}\b", patched_code, re.IGNORECASE)
+    new_present = re.search(rf"\b{new_name}(_|\b)", patched_code, re.IGNORECASE)
     return (not old_present) and bool(new_present)
 
 
