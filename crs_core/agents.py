@@ -36,6 +36,7 @@ import json
 import logging
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -66,6 +67,8 @@ EVIDENCE_DIR = Path(os.getenv("CRS_EVIDENCE_DIR", "./evidence"))
 
 BUILD_TIMEOUT = int(os.getenv("CRS_BUILD_TIMEOUT", "600"))
 RUN_TIMEOUT = int(os.getenv("CRS_RUN_TIMEOUT", "60"))
+
+_UNSHARE = shutil.which("unshare")
 
 # --------------------------------------------------------------------------- #
 # LLM transport
@@ -327,11 +330,58 @@ def run_vincent_targeted(
 # --------------------------------------------------------------------------- #
 # PRISM -- deterministic validator (NO model)
 # --------------------------------------------------------------------------- #
+def _preexec_harden() -> None:
+    try:
+        import resource
+
+        for limit_name, value in (
+            ("RLIMIT_CPU", (120, 120)),
+            ("RLIMIT_AS", (2 * 1024 * 1024 * 1024, 2 * 1024 * 1024 * 1024)),
+            ("RLIMIT_NPROC", (256, 256)),
+            ("RLIMIT_CORE", (0, 0)),
+        ):
+            try:
+                res = getattr(resource, limit_name, None)
+                if res is not None:
+                    resource.setrlimit(res, value)
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
 def _run(cmd: str, cwd: str, timeout: int) -> tuple[bool, str]:
     try:
-        proc = subprocess.run(
-            cmd, cwd=cwd, shell=True, capture_output=True, timeout=timeout
-        )
+        if _UNSHARE:
+            wrapped = f"{_UNSHARE} --net -- sh -c {shlex.quote(cmd)}"
+            proc = subprocess.run(
+                wrapped,
+                cwd=cwd,
+                shell=True,
+                capture_output=True,
+                timeout=timeout,
+                preexec_fn=_preexec_harden,
+            )
+            stderr_text = (proc.stderr or b"").decode("utf-8", "replace")
+            if "unshare:" in stderr_text:
+                LOGGER.warning("unshare --net unavailable; falling back to plain command execution")
+                proc = subprocess.run(
+                    cmd,
+                    cwd=cwd,
+                    shell=True,
+                    capture_output=True,
+                    timeout=timeout,
+                    preexec_fn=_preexec_harden,
+                )
+        else:
+            proc = subprocess.run(
+                cmd,
+                cwd=cwd,
+                shell=True,
+                capture_output=True,
+                timeout=timeout,
+                preexec_fn=_preexec_harden,
+            )
         out = (proc.stdout or b"").decode("utf-8", "replace") + \
               (proc.stderr or b"").decode("utf-8", "replace")
         return proc.returncode == 0, out
@@ -357,11 +407,24 @@ def _make_scratch(repo_root: str) -> str:
 
 
 def run_prism(event: CrashEvent, patch: PatchProposal, attempt: int) -> ValidationResult:
+    simulated = os.getenv("CRS_LLM_MODE", "mock").lower() != "live"
     scratch = _make_scratch(event.repo_root)
     try:
-        target = Path(scratch) / event.source_file
+        scratch_root = Path(scratch).resolve()
+        target = (scratch_root / event.source_file).resolve()
+        try:
+            target.relative_to(scratch_root)
+        except ValueError:
+            return ValidationResult(
+                crash_id=event.crash_id,
+                attempt=attempt,
+                simulated=simulated,
+                details=f"path traversal refused: {event.source_file}",
+            )
+
         if not target.exists():
             return ValidationResult(crash_id=event.crash_id, attempt=attempt,
+                                    simulated=simulated,
                                     details=f"target file missing in scratch: {event.source_file}")
 
         text = target.read_text(encoding="utf-8", errors="replace")
@@ -369,6 +432,7 @@ def run_prism(event: CrashEvent, patch: PatchProposal, attempt: int) -> Validati
         if original and original not in text:
             # the model hallucinated the function body -> refuse, do not guess
             return ValidationResult(crash_id=event.crash_id, attempt=attempt,
+                                    simulated=simulated,
                                     details="original function not found verbatim; patch not applied")
         target.write_text(text.replace(original, patch.patched_code.strip(), 1),
                           encoding="utf-8")
@@ -376,11 +440,27 @@ def run_prism(event: CrashEvent, patch: PatchProposal, attempt: int) -> Validati
         builds, build_log = _run(BUILD_CMD.format(repo=scratch), cwd=scratch, timeout=BUILD_TIMEOUT)
         if not builds:
             return ValidationResult(crash_id=event.crash_id, attempt=attempt,
-                                    builds=False, details=f"build failed:\n{build_log[-1500:]}")
+                                    builds=False, simulated=simulated,
+                                    details=f"build failed:\n{build_log[-1500:]}")
 
         harness = str(Path(scratch) / HARNESS_BIN_REL)
-        _, run_log = _run(f'"{harness}" "{event.testcase_path}"', cwd=scratch, timeout=RUN_TIMEOUT)
-        crash_fixed = not _sanitizer_triggered(run_log)
+        ok, run_log = _run(f'"{harness}" "{event.testcase_path}"', cwd=scratch, timeout=RUN_TIMEOUT)
+        sanitizer_hit = _sanitizer_triggered(run_log)
+        if sanitizer_hit:
+            crash_fixed = False
+        elif ok:
+            crash_fixed = True
+        else:
+            return ValidationResult(
+                crash_id=event.crash_id,
+                attempt=attempt,
+                builds=True,
+                crash_fixed=False,
+                regression_pass=False,
+                execution_failed=True,
+                simulated=simulated,
+                details=f"harness execution failed:\n{run_log[-1500:]}",
+            )
 
         if TEST_CMD:
             regression_pass, test_log = _run(TEST_CMD.format(repo=scratch), cwd=scratch, timeout=BUILD_TIMEOUT)
@@ -392,6 +472,7 @@ def run_prism(event: CrashEvent, patch: PatchProposal, attempt: int) -> Validati
                   f"{test_log[-600:] if not regression_pass else ''}")
         return ValidationResult(crash_id=event.crash_id, attempt=attempt, builds=True,
                                 crash_fixed=crash_fixed, regression_pass=regression_pass,
+                                execution_failed=False, simulated=simulated,
                                 details=detail.strip())
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
@@ -412,11 +493,24 @@ def _persist(event: CrashEvent, diag: Diagnosis, patch: PatchProposal, result: V
 
 
 def orchestrate_repair(event: CrashEvent) -> ValidationResult:
+    simulated = os.getenv("CRS_LLM_MODE", "mock").lower() != "live"
     if not event.source_file:
         return ValidationResult(crash_id=event.crash_id, attempt=0,
+                                simulated=simulated,
                                 details="no source location in crash; cannot slice")
 
-    abs_path = str(Path(event.repo_root) / event.source_file)
+    repo_root_resolved = Path(event.repo_root).resolve()
+    target_resolved = (repo_root_resolved / event.source_file).resolve()
+    try:
+        target_resolved.relative_to(repo_root_resolved)
+    except ValueError:
+        return ValidationResult(
+            crash_id=event.crash_id,
+            attempt=0,
+            simulated=simulated,
+            details=f"path traversal refused: {event.source_file}",
+        )
+    abs_path = str(target_resolved)
     func_code, func_name, _, _ = slice_function(abs_path, event.source_line)
 
     diagnosis = run_martian(event, func_code, func_name)
@@ -426,14 +520,16 @@ def orchestrate_repair(event: CrashEvent) -> ValidationResult:
         patch = run_vincent(event, diagnosis, func_code, func_name, attempt, feedback)
         if not patch.patched_code:
             feedback = "no patch produced; return a complete replacement function"
-            last = ValidationResult(crash_id=event.crash_id, attempt=attempt, details=feedback)
+            last = ValidationResult(crash_id=event.crash_id, attempt=attempt,
+                                    simulated=simulated, details=feedback)
             continue
 
         result = run_prism(event, patch, attempt)
         last = result
-        if result.accepted:
+        if result.accepted and not result.execution_failed:
             _persist(event, diagnosis, patch, result)
             return result
         feedback = result.details        # structured failure drives the next attempt
 
-    return last or ValidationResult(crash_id=event.crash_id, attempt=0, details="no attempts made")
+    return last or ValidationResult(crash_id=event.crash_id, attempt=0,
+                                    simulated=simulated, details="no attempts made")

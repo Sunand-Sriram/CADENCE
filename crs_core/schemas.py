@@ -71,11 +71,18 @@ class ValidationResult(BaseModel):
     builds: bool = False
     crash_fixed: bool = False            # original PoV no longer triggers the sanitizer
     regression_pass: bool = False
+    execution_failed: bool = False
+    simulated: bool = False
     details: str = ""
 
     @property
     def accepted(self) -> bool:
-        return self.builds and self.crash_fixed and self.regression_pass
+        return (
+            self.builds
+            and self.crash_fixed
+            and self.regression_pass
+            and not self.execution_failed
+        )
 
 
 class CryptoAsset(BaseModel):

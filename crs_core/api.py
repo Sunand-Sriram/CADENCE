@@ -38,7 +38,7 @@ if os.environ.get("CRS_LLM_MODE", "mock").lower() == "mock":
     os.environ.setdefault("CRS_BUILD_CMD", "echo ok")
 
 import uvicorn
-from fastapi import FastAPI, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -69,6 +69,16 @@ if os.environ.get("CRS_LLM_MODE", "mock").lower() == "mock" and _agents.BUILD_CM
 
 LOGGER = logging.getLogger(__name__)
 
+CRS_API_KEY = os.getenv("CRS_API_KEY", "")
+if not CRS_API_KEY:
+    LOGGER.warning("CRS_API_KEY is unset; API key authentication on mutating endpoints is disabled.")
+
+
+def require_api_key(x_crs_api_key: str = Header(default="")) -> None:
+    if CRS_API_KEY and x_crs_api_key != CRS_API_KEY:
+        raise HTTPException(status_code=401, detail="invalid or missing X-CRS-API-Key header")
+
+
 DEFAULT_TARGET_DIR = Path(os.getenv("CRS_REPO_ROOT", str(ROOT / "targets" / "target"))).resolve()
 EVIDENCE_DIR = Path(os.getenv("CRS_EVIDENCE_DIR", str(ROOT / "evidence"))).resolve()
 
@@ -95,7 +105,7 @@ app = FastAPI(title="CADENCE CRS API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -173,12 +183,16 @@ def _serialize_quantum(assessment: QuantumAssessment) -> dict[str, Any]:
 
 
 def _serialize_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
+    default_simulated = os.getenv("CRS_LLM_MODE", "mock").lower() != "live"
     return {
         "target_algorithm": str(candidate.get("target_algorithm", "")),
         "validates": bool(candidate.get("validates", False)),
         "builds": bool(candidate.get("builds", False)),
         "crash_fixed": bool(candidate.get("crash_fixed", False)),
         "regression_pass": bool(candidate.get("regression_pass", False)),
+        "execution_failed": bool(candidate.get("execution_failed", False)),
+        "simulated": bool(candidate.get("simulated", default_simulated)),
+        "crypto_verified": bool(candidate.get("crypto_verified", False)),
         "risk_before": int(candidate.get("risk_before", 0)),
         "risk_after": int(candidate.get("risk_after", 0)),
         "risk_drop": int(candidate.get("risk_drop", 0)),
@@ -307,6 +321,8 @@ def _compute_or_load_comparison(job: dict[str, Any], asset_id: str) -> dict[str,
         repo_root=str(repo_root.resolve()),
     )
 
+    default_simulated = os.getenv("CRS_LLM_MODE", "mock").lower() != "live"
+
     try:
         func_code, func_name, _, _ = _agents.slice_function(
             str(target_file_path.resolve()), event.source_line
@@ -343,12 +359,16 @@ def _compute_or_load_comparison(job: dict[str, Any], asset_id: str) -> dict[str,
             ).model_dump(mode="json")
             c_fixed = bool(selected_cand.get("crash_fixed", False))
             r_pass = bool(selected_cand.get("regression_pass", False))
+            exec_failed = bool(selected_cand.get("execution_failed", False))
+            sim = bool(selected_cand.get("simulated", default_simulated))
             result["_validation"] = ValidationResult(
                 crash_id=event.crash_id,
                 attempt=selected_idx,
                 builds=bool(selected_cand.get("builds", False)),
                 crash_fixed=c_fixed,
                 regression_pass=r_pass,
+                execution_failed=exec_failed,
+                simulated=sim,
                 details=f"crash_fixed={c_fixed}; regression_pass={r_pass}.",
             ).model_dump(mode="json")
     except Exception as exc:
@@ -363,6 +383,9 @@ def _compute_or_load_comparison(job: dict[str, Any], asset_id: str) -> dict[str,
                 "builds": False,
                 "crash_fixed": False,
                 "regression_pass": False,
+                "execution_failed": True,
+                "simulated": default_simulated,
+                "crypto_verified": False,
                 "risk_before": before.score,
                 "risk_after": after.score,
                 "risk_drop": before.score - after.score,
@@ -404,7 +427,7 @@ def get_health() -> dict[str, str]:
     return {"status": "ok", "llm_mode": mode}
 
 
-@app.post("/api/ingest")
+@app.post("/api/ingest", dependencies=[Depends(require_api_key)])
 def post_ingest(payload: IngestRequest) -> dict[str, str]:
     job_id = uuid.uuid4().hex[:12]
     repo_url = (payload.repo_url or "").strip()
@@ -507,7 +530,7 @@ def get_compare(
     }
 
 
-@app.post("/api/approve")
+@app.post("/api/approve", dependencies=[Depends(require_api_key)])
 def post_approve(payload: ApproveRequest) -> dict[str, Any]:
     job = _get_job(payload.job_id)
     asset_id = (payload.asset_id or "").strip()
@@ -517,7 +540,37 @@ def post_approve(payload: ApproveRequest) -> dict[str, Any]:
     resolved_asset_id = str(comparison.get("asset_id") or asset_id)
     compare_path = EVIDENCE_DIR / f"compare_{resolved_asset_id}.json"
 
+    candidate = next(
+        (
+            item
+            for item in comparison.get("candidates", [])
+            if item.get("target_algorithm") == chosen_algorithm
+        ),
+        None,
+    )
+    validation_dict = comparison.get("_validation") or {}
+    is_simulated = (
+        bool(candidate["simulated"])
+        if candidate is not None and "simulated" in candidate
+        else bool(
+            validation_dict.get(
+                "simulated",
+                os.getenv("CRS_LLM_MODE", "mock").lower() != "live",
+            )
+        )
+    )
+    if is_simulated:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "cannot approve a patch validated in simulated/mock mode — "
+                "set CRS_LLM_MODE=live and re-run compare first"
+            ),
+        )
+
     try:
+        if candidate is not None and bool(candidate.get("execution_failed", False)):
+            raise ValueError(f"cannot approve candidate with execution_failed=True: {chosen_algorithm}")
         record = run_approve(
             compare_path,
             chosen_algorithm=chosen_algorithm,
@@ -536,14 +589,6 @@ def post_approve(payload: ApproveRequest) -> dict[str, Any]:
         job.setdefault("approvals", {})[record.asset_id] = record.model_dump(mode="json")
         return approval_payload
     except (OSError, ValueError, KeyError) as exc:
-        candidate = next(
-            (
-                item
-                for item in comparison.get("candidates", [])
-                if item.get("target_algorithm") == chosen_algorithm
-            ),
-            None,
-        )
         asset = _find_asset(job, resolved_asset_id)
         risk_before = int(candidate["risk_before"]) if candidate and "risk_before" in candidate else (
             score_asset(asset).score if asset else 0
@@ -650,12 +695,21 @@ def get_evidence(
             ).model_dump(mode="json")
             c_fixed = bool(selected_cand.get("crash_fixed", False))
             r_pass = bool(selected_cand.get("regression_pass", False))
+            exec_failed = bool(selected_cand.get("execution_failed", False))
+            sim = bool(
+                selected_cand.get(
+                    "simulated",
+                    os.getenv("CRS_LLM_MODE", "mock").lower() != "live",
+                )
+            )
             derived_validation = ValidationResult(
                 crash_id=crash_id,
                 attempt=selected_idx,
                 builds=bool(selected_cand.get("builds", False)),
                 crash_fixed=c_fixed,
                 regression_pass=r_pass,
+                execution_failed=exec_failed,
+                simulated=sim,
                 details=f"crash_fixed={c_fixed}; regression_pass={r_pass}.",
             ).model_dump(mode="json")
 

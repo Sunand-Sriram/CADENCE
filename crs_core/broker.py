@@ -25,6 +25,7 @@ Env:
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import subprocess
@@ -36,6 +37,8 @@ from celery import Celery
 
 from .schemas import CrashEvent, Sanitizer
 
+LOGGER = logging.getLogger(__name__)
+
 # --------------------------------------------------------------------------- #
 # Config (env-driven; the bridged VM must reach the Windows host IP)
 # --------------------------------------------------------------------------- #
@@ -44,6 +47,7 @@ WATCH_DIR = Path(os.getenv("CRS_SOLUTIONS_DIR", "./crashes"))
 REPO_ROOT = os.getenv("CRS_REPO_ROOT", "./targets/target")
 HARNESS_BIN = os.getenv("CRS_HARNESS_BIN", "./targets/target/fuzz_harness")
 REPRODUCE_TIMEOUT = int(os.getenv("CRS_REPRODUCE_TIMEOUT", "60"))
+CRS_API_KEY = os.getenv("CRS_API_KEY", "")
 
 celery_app = Celery("crs", broker=REDIS_URL, backend=REDIS_URL)
 celery_app.conf.update(
@@ -203,11 +207,18 @@ def watch_solutions() -> None:
 # Ingest path B: HTTP endpoint for a LibAFL custom event hook
 # --------------------------------------------------------------------------- #
 def make_api():
-    from fastapi import FastAPI
+    from fastapi import Depends, FastAPI, Header, HTTPException
+
+    if not CRS_API_KEY:
+        LOGGER.warning("CRS_API_KEY is unset; API key authentication on POST /crash is disabled.")
+
+    def require_api_key(x_crs_api_key: str = Header(default="")) -> None:
+        if CRS_API_KEY and x_crs_api_key != CRS_API_KEY:
+            raise HTTPException(status_code=401, detail="invalid or missing X-CRS-API-Key header")
 
     api = FastAPI(title="CRS crash ingest")
 
-    @api.post("/crash")
+    @api.post("/crash", dependencies=[Depends(require_api_key)])
     def ingest(event: CrashEvent):
         return {"crash_id": event.crash_id, "queued": submit(event)}
 
