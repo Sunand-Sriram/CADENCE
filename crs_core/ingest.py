@@ -1,10 +1,12 @@
 """Repository ingestion: shallow-clone a Git repository and pin its commit SHA."""
 from __future__ import annotations
 
+import ipaddress
 import logging
 import os
 import re
 import shutil
+import socket
 import stat
 import subprocess
 from pathlib import Path
@@ -17,11 +19,28 @@ DEFAULT_WORKSPACE = ROOT / "workspace"
 CLONE_TIMEOUT_SECONDS = 120
 
 _SAFE_REPO_RE = re.compile(r"^[A-Za-z0-9._-]+$")
-_ALLOWED_SCHEMES = {"http", "https", "git", "ssh", "file"}
+_ALLOWED_SCHEMES = {"https"}
 
 
 class IngestError(RuntimeError):
     """Raised when a repository URL is invalid or cloning fails."""
+
+
+def _is_blocked_host(host: str) -> bool:
+    if not host:
+        return True
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except socket.gaierror:
+        return True
+    for info in infos:
+        try:
+            ip = ipaddress.ip_address(info[4][0])
+        except ValueError:
+            continue
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+            return True
+    return False
 
 
 def _derive_repo_name(url: str) -> str:
@@ -32,18 +51,16 @@ def _derive_repo_name(url: str) -> str:
     if cleaned.startswith("-"):
         raise IngestError("Repository URL must not start with '-'.")
 
-    local_path = Path(cleaned)
-    if local_path.exists():
-        raw_name = local_path.resolve().name
-    else:
-        parsed = urlparse(cleaned)
-        if parsed.scheme and parsed.scheme.lower() not in _ALLOWED_SCHEMES:
-            raise IngestError(f"Unsupported URL scheme: {parsed.scheme!r}")
-        if not parsed.scheme and "@" not in cleaned:
-            raise IngestError(f"Invalid repository URL: {cleaned!r}")
-        path_part = parsed.path if parsed.scheme else cleaned.split(":", 1)[-1]
-        raw_name = path_part.rstrip("/\\").split("/")[-1].split("\\")[-1]
+    parsed = urlparse(cleaned)
+    scheme = (parsed.scheme or "").lower()
+    if scheme not in _ALLOWED_SCHEMES:
+        raise IngestError(f"Unsupported URL scheme {parsed.scheme!r}; only 'https' is allowed.")
 
+    host = parsed.hostname or ""
+    if _is_blocked_host(host):
+        raise IngestError(f"Host {host!r} is not allowed")
+
+    raw_name = parsed.path.rstrip("/\\").split("/")[-1].split("\\")[-1]
     if raw_name.lower().endswith(".git"):
         raw_name = raw_name[:-4]
 
@@ -135,4 +152,3 @@ def clone_repo(url: str, workspace_dir: str | Path | None = None) -> dict[str, s
 
     commit = _resolve_head(dest)
     return {"repo": repo_name, "commit": commit, "path": str(dest)}
-

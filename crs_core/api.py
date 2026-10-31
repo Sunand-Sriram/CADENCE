@@ -119,6 +119,7 @@ class ApproveRequest(BaseModel):
     asset_id: str
     job_id: str = "default"
     chosen_algorithm: str
+    approved_by: str = "demo-reviewer"
     note: str = ""
 
 
@@ -184,6 +185,7 @@ def _serialize_quantum(assessment: QuantumAssessment) -> dict[str, Any]:
 
 def _serialize_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
     default_simulated = os.getenv("CRS_LLM_MODE", "mock").lower() != "live"
+    patch_hash = str(candidate.get("patch_hash", ""))
     return {
         "target_algorithm": str(candidate.get("target_algorithm", "")),
         "validates": bool(candidate.get("validates", False)),
@@ -196,7 +198,8 @@ def _serialize_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
         "risk_before": int(candidate.get("risk_before", 0)),
         "risk_after": int(candidate.get("risk_after", 0)),
         "risk_drop": int(candidate.get("risk_drop", 0)),
-        "patch_hash": str(candidate.get("patch_hash", "")),
+        "patch_hash": patch_hash,
+        "patch_hash_short": str(candidate.get("patch_hash_short", patch_hash[:12])),
     }
 
 
@@ -390,6 +393,7 @@ def _compute_or_load_comparison(job: dict[str, Any], asset_id: str) -> dict[str,
                 "risk_after": after.score,
                 "risk_drop": before.score - after.score,
                 "patch_hash": "",
+                "patch_hash_short": "",
                 "patched_code": "",
             })
         result = {
@@ -428,7 +432,7 @@ def get_health() -> dict[str, str]:
 
 
 @app.post("/api/ingest", dependencies=[Depends(require_api_key)])
-def post_ingest(payload: IngestRequest) -> dict[str, str]:
+def post_ingest(payload: IngestRequest) -> dict[str, Any]:
     job_id = uuid.uuid4().hex[:12]
     repo_url = (payload.repo_url or "").strip()
     JOBS[job_id] = {
@@ -452,7 +456,7 @@ def post_ingest(payload: IngestRequest) -> dict[str, str]:
             "job_id": job_id,
             "repo": info["repo"],
             "commit": info["commit"],
-            "status": "started",
+            "status": JOBS[job_id]["status"],
         }
     except (IngestError, Exception) as exc:
         LOGGER.warning("Ingest failed for %r: %s", repo_url, exc)
@@ -469,7 +473,8 @@ def post_ingest(payload: IngestRequest) -> dict[str, str]:
             "job_id": job_id,
             "repo": repo_guess,
             "commit": "",
-            "status": "started",
+            "status": JOBS[job_id]["status"],
+            "error": JOBS[job_id]["error"],
         }
 
 
@@ -571,10 +576,11 @@ def post_approve(payload: ApproveRequest) -> dict[str, Any]:
     try:
         if candidate is not None and bool(candidate.get("execution_failed", False)):
             raise ValueError(f"cannot approve candidate with execution_failed=True: {chosen_algorithm}")
+        approved_by = (payload.approved_by or "").strip() or "demo-reviewer"
         record = run_approve(
             compare_path,
             chosen_algorithm=chosen_algorithm,
-            approved_by="user",
+            approved_by=approved_by,
             note=payload.note,
         )
         approval_payload = {

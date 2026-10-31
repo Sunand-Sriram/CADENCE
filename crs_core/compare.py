@@ -39,6 +39,7 @@ def compare_alternatives(
         validation = run_prism(event, patch, attempt)
         crypto_verified = _crypto_replaced(asset.algorithm, target_algorithm, patch.patched_code)
         after = score_after(asset, target_algorithm)
+        full_hash = hashlib.sha256(patch.patched_code.encode("utf-8")).hexdigest()
         candidates.append({
             "target_algorithm": target_algorithm,
             "validates": validation.accepted,
@@ -51,7 +52,8 @@ def compare_alternatives(
             "risk_before": before.score,
             "risk_after": after.score,
             "risk_drop": before.score - after.score,
-            "patch_hash": hashlib.sha256(patch.patched_code.encode("utf-8")).hexdigest()[:12],
+            "patch_hash": full_hash,
+            "patch_hash_short": full_hash[:12],
             "patched_code": patch.patched_code,
         })
 

@@ -38,15 +38,17 @@ def _patch_text(compare_path: Path, candidate: dict) -> str:
         except (OSError, json.JSONDecodeError):
             continue
         patch = bundle.get("patch", {}).get("patched_code", "") if isinstance(bundle, dict) else ""
-        if patch and hashlib.sha256(patch.encode("utf-8")).hexdigest()[:12] == expected:
-            return patch
+        if patch:
+            digest = hashlib.sha256(patch.encode("utf-8")).hexdigest()
+            if digest == expected or digest[:12] == expected:
+                return patch
     raise ValueError("chosen patch text is not available with the recorded patch hash")
 
 
 def approve(
     compare_json_path: str | Path,
     chosen_algorithm: str,
-    approved_by: str = "user",
+    approved_by: str = "demo-reviewer",
     note: str = "",
 ) -> ApprovalRecord:
     """Approve one validated candidate and write its patch outside the repo."""
@@ -62,9 +64,11 @@ def approve(
         raise ValueError(f"cannot approve non-validating candidate: {chosen_algorithm}")
 
     patch_text = _patch_text(compare_path, candidate)
-    patch_hash = hashlib.sha256(patch_text.encode("utf-8")).hexdigest()[:12]
-    if patch_hash != candidate.get("patch_hash"):
+    full_hash = hashlib.sha256(patch_text.encode("utf-8")).hexdigest()
+    recorded_hash = str(candidate.get("patch_hash", ""))
+    if recorded_hash not in {full_hash, full_hash[:12]}:
         raise ValueError("candidate patch hash does not match its patch text")
+    patch_hash = full_hash if len(recorded_hash) == 64 else full_hash[:12]
 
     record = ApprovalRecord(
         asset_id=comparison["asset_id"],
