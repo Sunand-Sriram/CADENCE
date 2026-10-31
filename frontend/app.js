@@ -406,7 +406,8 @@ async function handleEvidenceDetail(event) {
   button.textContent = "Loading tests";
   try {
     const evidencePayload = await evidence(asset.asset_id);
-    renderFixDetail(asset, evidencePayload);
+    const candidate = (evidencePayload?.comparison?.candidates || []).find(item => item.target_algorithm === button.dataset.algorithm);
+    renderFixDetail(asset, evidencePayload, candidate);
   } catch (error) {
     button.disabled = false;
     button.textContent = "View tests";
@@ -452,36 +453,36 @@ function assetBlockAsset(assetId) {
   return assetDetailsById.get(assetId) || { asset_id: assetId, algorithm: "Asset" };
 }
 
-function evidenceReviewMarkup(asset, evidencePayload, comparison, includeValidation = true) {
+function evidenceReviewMarkup(asset, evidencePayload, comparison, includeValidation = true, candidateOverride = null) {
   const diagnosis = evidencePayload?.diagnosis || {};
   const patch = evidencePayload?.patch || {};
   const validation = evidencePayload?.validation || {};
-  const selectedAlgorithm = evidencePayload?.approval?.chosen_algorithm || comparison?.recommended || "—";
-  const selectedCandidate = (evidencePayload?.comparison?.candidates || comparison?.candidates || []).find(candidate => candidate.target_algorithm === selectedAlgorithm);
+  const selectedAlgorithm = candidateOverride?.target_algorithm || evidencePayload?.approval?.chosen_algorithm || comparison?.recommended || "—";
+  const selectedCandidate = candidateOverride || (evidencePayload?.comparison?.candidates || comparison?.candidates || []).find(candidate => candidate.target_algorithm === selectedAlgorithm);
   const simulated = selectedCandidate?.simulated ?? validation.simulated;
-  const validationMarkup = includeValidation ? `<div class="review-block"><h3>Validation</h3><div class="review-tests"><span>Builds ${testResult(validation.builds)}</span><span>Crash fixed ${testResult(validation.crash_fixed)}</span><span>Regression ${testResult(validation.regression_pass)}</span><span>Crypto verified ${testResult(selectedCandidate?.crypto_verified ?? false)}</span>${simulated ? `<span class="simulated-badge">simulated</span>` : ""}</div></div>` : "";
+  const validationMarkup = includeValidation ? `<div class="review-block"><h3>Validation</h3><div class="review-tests"><span>Builds ${testResult(selectedCandidate?.builds ?? validation.builds)}</span><span>Crash fixed ${testResult(selectedCandidate?.crash_fixed ?? validation.crash_fixed)}</span><span>Regression ${testResult(selectedCandidate?.regression_pass ?? validation.regression_pass)}</span><span>Crypto verified ${testResult(selectedCandidate?.crypto_verified ?? false)}</span>${simulated ? `<span class="simulated-badge">simulated</span>` : ""}</div></div>` : "";
   return `<div class="review-block"><h3>Diagnosis</h3><p><strong>Root cause</strong> ${escapeHtml(diagnosis.root_cause || "—")}</p><p><strong>Vulnerability class</strong> ${escapeHtml(diagnosis.vulnerability_class || "—")}</p></div>
     <details class="reasoning-block"><summary>Reasoning trace</summary><pre>${escapeHtml(diagnosis.reasoning_trace || "—")}</pre></details>
     <div class="review-block"><h3>Patch — ${escapeHtml(selectedAlgorithm)}</h3><div class="patch-columns"><div><h4>Original code</h4><pre>${escapeHtml(patch.original_code || "—")}</pre></div><div><h4>Patched code</h4><pre>${escapeHtml(patch.patched_code || "—")}</pre></div></div></div>${validationMarkup}`;
 }
 
-function renderApprovalReview(asset, evidencePayload, comparison) {
+function renderApprovalReview(asset, evidencePayload, comparison, candidateOverride = null) {
   document.querySelector("#approval-section")?.remove();
   const section = document.createElement("section");
   section.id = "approval-section";
   section.className = "dashboard-section";
-  section.innerHTML = `<div class="section-heading"><h2>Approval Review</h2><span class="section-meta">${escapeHtml(assetLabel(asset.asset_id, asset.algorithm))}</span></div><p class="approval-note">A human reviews the generated fix and its test evidence, then approves it; the system refuses fixes that are not genuinely validated.</p>${evidenceReviewMarkup(asset, evidencePayload, comparison)}`;
+  section.innerHTML = `<div class="section-heading"><h2>Approval Review</h2><span class="section-meta">${escapeHtml(assetLabel(asset.asset_id, asset.algorithm))}</span></div><p class="approval-note">A human reviews the generated fix and its test evidence, then approves it; the system refuses fixes that are not genuinely validated.</p>${evidenceReviewMarkup(asset, evidencePayload, comparison, true, candidateOverride)}`;
   document.querySelector("#dashboard-sections").appendChild(section);
   setActiveTab(activeTab);
 }
 
-function renderFixDetail(asset, evidencePayload) {
+function renderFixDetail(asset, evidencePayload, candidate = null) {
   document.querySelector("#fix-detail-section")?.remove();
   const comparison = evidencePayload?.comparison || {};
   const section = document.createElement("section");
   section.id = "fix-detail-section";
   section.className = "dashboard-section";
-  section.innerHTML = `<button class="detail-back" type="button">← Back to Fixes</button><div class="section-heading"><h2>Fix Test Detail</h2><span class="section-meta">${escapeHtml(assetLabel(asset.asset_id, asset.algorithm))}</span></div>${evidenceReviewMarkup(asset, evidencePayload, comparison, false)}<button class="detail-approve" type="button">Approve fix</button><p class="approval-message" aria-live="polite"></p>`;
+  section.innerHTML = `<button class="detail-back" type="button">← Back to Fixes</button><div class="section-heading"><h2>Fix Test Detail</h2><span class="section-meta">${escapeHtml(assetLabel(asset.asset_id, asset.algorithm))} · ${escapeHtml(candidate?.target_algorithm || "")}</span></div>${evidenceReviewMarkup(asset, evidencePayload, comparison, false, candidate)}<button class="detail-approve" type="button">Approve fix</button><p class="approval-message" aria-live="polite"></p>`;
   document.querySelector("#dashboard-sections").appendChild(section);
   section.querySelector(".detail-back").addEventListener("click", () => {
     section.remove();
@@ -489,7 +490,7 @@ function renderFixDetail(asset, evidencePayload) {
     setActiveTab("fixes");
   });
   section.querySelector(".detail-approve").addEventListener("click", () => {
-    renderApprovalReview(asset, evidencePayload, comparison);
+    renderApprovalReview(asset, evidencePayload, comparison, candidate);
     setActiveTab("approval");
   });
   setActiveTab("fixes");
