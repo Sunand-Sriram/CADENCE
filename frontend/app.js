@@ -467,12 +467,18 @@ function evidenceReviewMarkup(asset, evidencePayload, comparison, includeValidat
 }
 
 function renderApprovalReview(asset, evidencePayload, comparison, candidateOverride = null) {
-  document.querySelector("#approval-section")?.remove();
-  const section = document.createElement("section");
-  section.id = "approval-section";
-  section.className = "dashboard-section";
-  section.innerHTML = `<div class="section-heading"><h2>Approval Review</h2><span class="section-meta">${escapeHtml(assetLabel(asset.asset_id, asset.algorithm))}</span></div><p class="approval-note">A human reviews the generated fix and its test evidence, then approves it; the system refuses fixes that are not genuinely validated.</p>${evidenceReviewMarkup(asset, evidencePayload, comparison, true, candidateOverride)}`;
-  document.querySelector("#dashboard-sections").appendChild(section);
+  const existingSection = document.querySelector("#approval-section");
+  const section = existingSection || document.createElement("section");
+  section.querySelector(".approval-live-review")?.remove();
+  if (!existingSection) {
+    section.id = "approval-section";
+    section.className = "dashboard-section";
+    document.querySelector("#dashboard-sections").appendChild(section);
+  }
+  const liveReview = document.createElement("div");
+  liveReview.className = "approval-live-review";
+  liveReview.innerHTML = `<div class="section-heading"><h2>Approval Review</h2><span class="section-meta">${escapeHtml(assetLabel(asset.asset_id, asset.algorithm))}</span></div><p class="approval-note">A human reviews the generated fix and its test evidence, then approves it; the system refuses fixes that are not genuinely validated.</p>${evidenceReviewMarkup(asset, evidencePayload, comparison, true, candidateOverride)}`;
+  section.appendChild(liveReview);
   setActiveTab(activeTab);
 }
 
