@@ -20,6 +20,7 @@
 - 2026-10-31 — Increased departure-board table cell/header text and detail-view monospace sizing for projector readability without changing layout or data behavior.
 - 2026-10-31 — Set Overview as the frontend’s default active tab while preserving the blank canvas until Analyze completes.
 - 2026-10-31 — Hid tab navigation on the blank canvas and reveal it only after a repository analysis completes.
+- 2026-10-31 — Proportioned frontend data-table columns, aligned numeric cells, and tightened the Fixes asset layout without changing data behavior.
 
 ## KALI NOTES
 

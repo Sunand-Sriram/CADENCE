@@ -273,3 +273,8 @@
 ## 2026-10-31 — Step 32 — hide nav until analyzed
 
 - Hid Overview/CBOM/Risk/Quantum/Fixes/Approval navigation on initial load and reveal it after the analyzed job loads successfully.
+
+## 2026-10-31 — Step 33 — table column proportions + fixes layout cleanup
+
+- Added fixed, proportioned layouts for CBOM, Risk, Quantum, and Fixes tables with consistent alignment and wrapping.
+- Tightened weak-asset Fixes headers so the asset label and Compare fixes control share one compact row.
