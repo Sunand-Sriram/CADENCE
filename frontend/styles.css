@@ -171,6 +171,7 @@ th:first-child, td:first-child { padding-left: 14px; }
 .approval-message.approved { color: var(--green); }
 .approval-message.refused { color: var(--coral); }
 .approval-note { margin: 0 0 20px; color: var(--grey); font-size: .95rem; }
+.demo-disclaimer { border-left: 3px solid var(--sand); padding-left: 12px; }
 .detail-back { margin-bottom: 20px; }
 .detail-back:hover { color: var(--sand); }
 .detail-approve { margin-top: 24px; }
