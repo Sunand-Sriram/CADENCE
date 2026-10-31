@@ -1,5 +1,5 @@
-const API_BASE = "http://localhost:8900";
-const USE_MOCK = true;
+const API_BASE = "http://10.80.58.202:8900";
+const USE_MOCK = false;
 
 let currentJobId = "default";
 let mockDataPromise;
@@ -59,7 +59,22 @@ async function quantum(job_id = currentJobId) {
   return request(`/api/quantum?job_id=${encodeURIComponent(job_id)}`, {}, "quantum");
 }
 async function compare(asset_id, job_id = currentJobId) {
-  return request(`/api/compare?asset_id=${encodeURIComponent(asset_id)}&job_id=${encodeURIComponent(job_id)}`, {}, "compare");
+  if (USE_MOCK) return request(`/api/compare?asset_id=${encodeURIComponent(asset_id)}&job_id=${encodeURIComponent(job_id)}`, {}, "compare");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 240000);
+  try {
+    const response = await fetch(`${API_BASE}/api/compare?asset_id=${encodeURIComponent(asset_id)}&job_id=${encodeURIComponent(job_id)}`, {
+      headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  } catch (error) {
+    if (error.name === "AbortError") throw new Error("request timed out after 240 seconds");
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 async function approve(asset_id, job_id, chosen_algorithm) {
   return request("/api/approve", {
@@ -143,29 +158,60 @@ function renderQuantum(payload) {
   (riskSection || document.querySelector("#cbom-section")).insertAdjacentElement("afterend", section);
 }
 
-function renderFixComparisons(items) {
+function candidateTable(asset, comparison) {
+  return `<div class="table-wrap"><table class="fix-table">
+    <thead><tr><th>Candidate</th><th>Validates</th><th>Risk Before → After</th><th>Drop</th><th>Approve</th></tr></thead>
+    <tbody>${comparison.candidates.map(candidate => `<tr class="${candidate.target_algorithm === comparison.recommended ? "recommended" : ""}">
+      <td><span class="algorithm">${escapeHtml(candidate.target_algorithm)}</span>${candidate.target_algorithm === comparison.recommended ? ` <span class="recommended-badge">Recommended</span>` : ""}</td>
+      <td><span class="validation ${candidate.validates ? "valid" : "failed"}">${candidate.validates ? "✓ valid" : "failed"}</span></td>
+      <td class="mono risk-transition">${escapeHtml(candidate.risk_before)} → ${escapeHtml(candidate.risk_after)}</td>
+      <td class="risk-drop">-${escapeHtml(Math.abs(candidate.risk_drop))}</td>
+      <td>${candidate.validates ? `<button class="approve-button" type="button" data-asset-id="${escapeHtml(asset.asset_id)}" data-algorithm="${escapeHtml(candidate.target_algorithm)}">Approve</button>` : ""}</td>
+    </tr>`).join("")}</tbody>
+  </table></div>
+  <p class="approval-message" aria-live="polite"></p>`;
+}
+
+function attachApprovalButtons(container) {
+  container.querySelectorAll(".approve-button").forEach(button => button.addEventListener("click", handleApproval));
+}
+
+async function loadComparison(asset, article, button, status) {
+  button.disabled = true;
+  status.className = "compare-status loading";
+  status.textContent = "Generating and validating fixes with local models… (this runs real LLM inference, ~1-2 min)";
+  try {
+    const comparison = await compare(asset.asset_id);
+    if (!comparison?.candidates?.length) throw new Error("no candidates returned");
+    status.textContent = "";
+    status.className = "compare-status";
+    article.querySelector(".compare-results") .innerHTML = candidateTable(asset, comparison);
+    attachApprovalButtons(article);
+  } catch (error) {
+    status.className = "compare-status failed";
+    status.textContent = `Fix generation failed — ${error.message || "request could not be completed"}`;
+    button.disabled = false;
+  }
+}
+
+function renderFixComparisons(payload) {
   document.querySelector("#fix-section")?.remove();
-  const available = items.filter(item => item.comparison?.candidates?.length);
-  if (!available.length) return;
+  const assets = (payload?.assets || []).filter(asset => asset.is_weak);
+  if (!assets.length) return;
 
   const section = document.createElement("section");
   section.id = "fix-section";
-  section.innerHTML = `<div class="section-heading"><h2>Fix Alternatives</h2><span class="section-meta">${available.length} WEAK ASSET${available.length === 1 ? "" : "S"}</span></div>
-    ${available.map(({ asset, comparison }) => `<article class="fix-asset" data-asset-id="${escapeHtml(asset.asset_id)}">
+  section.innerHTML = `<div class="section-heading"><h2>Fix Alternatives</h2><span class="section-meta">${assets.length} WEAK ASSET${assets.length === 1 ? "" : "S"}</span></div>
+    ${assets.map(asset => `<article class="fix-asset" data-asset-id="${escapeHtml(asset.asset_id)}">
       <h3>${escapeHtml(asset.algorithm)} <span>— candidate fixes</span></h3>
-      <div class="table-wrap"><table class="fix-table">
-        <thead><tr><th>Candidate</th><th>Validates</th><th>Risk Before → After</th><th>Drop</th><th>Action</th></tr></thead>
-        <tbody>${comparison.candidates.map(candidate => `<tr class="${candidate.target_algorithm === comparison.recommended ? "recommended" : ""}">
-          <td><span class="algorithm">${escapeHtml(candidate.target_algorithm)}</span>${candidate.target_algorithm === comparison.recommended ? ` <span class="recommended-badge">Recommended</span>` : ""}</td>
-          <td><span class="validation ${candidate.validates ? "valid" : "failed"}">${candidate.validates ? "✓ valid" : "failed"}</span></td>
-          <td class="mono risk-transition">${escapeHtml(candidate.risk_before)} → ${escapeHtml(candidate.risk_after)}</td>
-          <td class="risk-drop">-${escapeHtml(Math.abs(candidate.risk_drop))}</td>
-          <td>${candidate.validates ? `<button class="approve-button" type="button" data-asset-id="${escapeHtml(asset.asset_id)}" data-algorithm="${escapeHtml(candidate.target_algorithm)}">Approve</button>` : ""}</td>
-        </tr>`).join("")}</tbody>
-      </table></div>
-      <p class="approval-message" aria-live="polite"></p>
+      <div class="compare-controls"><button class="compare-button" type="button">Compare fixes</button><span class="compare-status" aria-live="polite"></span></div>
+      <div class="compare-results"></div>
     </article>`).join("")}`;
-  section.querySelectorAll(".approve-button").forEach(button => button.addEventListener("click", handleApproval));
+  section.querySelectorAll(".fix-asset").forEach((article, index) => {
+    const button = article.querySelector(".compare-button");
+    const status = article.querySelector(".compare-status");
+    button.addEventListener("click", () => loadComparison(assets[index], article, button, status));
+  });
   document.querySelector("#quantum-section")?.insertAdjacentElement("afterend", section) || document.querySelector("#cbom-section").insertAdjacentElement("afterend", section);
 }
 
@@ -195,23 +241,6 @@ async function handleApproval(event) {
     message.textContent = "Backend unreachable — approval could not be completed.";
     button.disabled = false;
   }
-}
-
-async function loadFixComparisons(assets) {
-  const weakAssets = (assets.assets || []).filter(asset => asset.is_weak);
-  if (!weakAssets.length) {
-    renderFixComparisons([]);
-    return;
-  }
-  const results = await Promise.all(weakAssets.map(async asset => {
-    try {
-      return { asset, comparison: await compare(asset.asset_id) };
-    } catch (error) {
-      if (!USE_MOCK) setConnection("OFFLINE", "Backend unreachable — fix comparisons are unavailable.");
-      return { asset, comparison: null };
-    }
-  }));
-  renderFixComparisons(results);
 }
 
 function wait(milliseconds) {
@@ -252,14 +281,14 @@ async function loadDashboard() {
     } catch (error) {
       renderQuantum({ assessments: [] });
     }
-    await loadFixComparisons(assets);
+    renderFixComparisons(assets);
     setConnection(USE_MOCK ? "MOCK" : "LIVE");
   } catch (error) {
     setConnection("OFFLINE", "Backend unreachable — start the Kali API or set USE_MOCK = true for local demo data.");
     document.querySelector("#cbom-body").innerHTML = `<tr><td colspan="5" class="empty-state error-state">CBOM unavailable while backend is unreachable.</td></tr>`;
     renderRisk({ assessments: [] });
     renderQuantum({ assessments: [] });
-    renderFixComparisons([]);
+    renderFixComparisons({ assets: [] });
   }
 }
 

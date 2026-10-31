@@ -63,6 +63,11 @@ th:first-child, td:first-child { padding-left: 14px; }
 .fix-asset + .fix-asset { border-top: 1px solid var(--sand); padding-top: 25px; }
 .fix-asset h3 { margin: 0 0 14px; font: 700 .86rem var(--mono); }
 .fix-asset h3 span { color: var(--grey); font-weight: 400; }
+.compare-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.compare-button { padding: 8px 12px; font-size: .68rem; }
+.compare-button:disabled { cursor: default; opacity: .65; }
+.compare-status { color: var(--grey); font: .72rem var(--mono); }
+.compare-status.failed { color: var(--coral); }
 .fix-table tr.recommended td:first-child { border-left: 3px solid var(--sand); padding-left: 11px; }
 .recommended-badge { display: inline-block; background: var(--sand); color: var(--navy); padding: 3px 6px; font: 700 .61rem var(--mono); }
 .validation, .risk-drop { font: 700 .72rem var(--mono); }

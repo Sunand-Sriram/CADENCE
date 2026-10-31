@@ -206,3 +206,10 @@
   refreshes for CBOM, Risk, Quantum, and Fix Alternatives.
 - Added quiet validation, progress, completion, error, and unreachable states;
   mock mode simulates a two-second ingest lifecycle.
+
+## 2026-10-31 — Step 21 — compare panel async loading state for live mode
+
+- Changed Fix Alternatives to fetch comparisons only when a weak asset's
+  Compare fixes button is clicked, keeping the page interactive during inference.
+- Added a 240-second live comparison timeout and retryable inline failure state;
+  mock comparisons remain immediate.
