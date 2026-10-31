@@ -19,6 +19,7 @@
 - 2026-10-31 — Changed the frontend startup to a blank canvas until Analyze completes, with larger projector typography and responsive full-width alignment.
 - 2026-10-31 — Removed repeated asset IDs and file locations from algorithm labels and proportioned the CBOM, Risk, Quantum, and Fixes tables around distinct columns.
 - 2026-10-31 — Simplified the Risk table to summary fields with a static Details view for factor breakdown, rationale, weighted score, and band.
+- 2026-10-31 — Widened CBOM metadata/Weakness, Risk metadata/detail, and Quantum middle/PQC columns while preserving distinct fields and normal word wrapping.
 - 2026-10-31 — Increased departure-board table cell/header text and detail-view monospace sizing for projector readability without changing layout or data behavior.
 - 2026-10-31 — Set Overview as the frontend’s default active tab while preserving the blank canvas until Analyze completes.
 - 2026-10-31 — Hid tab navigation on the blank canvas and reveal it only after a repository analysis completes.

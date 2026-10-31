@@ -288,3 +288,8 @@
 
 - Removed inline Risk factors/rationale from the table and fixed Risk wrapping to remain word-based.
 - Added a static Risk score detail view with factor values, weights, rationale, weighted computation, band, and Back to Risk navigation.
+
+## 2026-10-31 — Step 35 — widen specific columns in CBOM/Risk/Quantum
+
+- Widened CBOM Asset ID, File:Line, and Weakness columns; widened Risk metadata and detail columns.
+- Distributed Quantum threat, Mosca, urgency, and Recommended PQC columns for readable normal-word wrapping.
