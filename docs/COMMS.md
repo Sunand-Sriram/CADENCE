@@ -14,6 +14,7 @@
 - 2026-10-31 — Added shared asset indexing, clearer Weakness labels, detailed fix test results, and a statistical Overview summary.
 - 2026-10-31 — Refined top navigation, Fixes candidate fields, and the read-only evidence-backed Approval Review with simulated/refusal handling.
 - 2026-10-31 — Restyled CBOM, Risk, Quantum, and Fixes tables as sharp-corner departure-board panels using the existing light palette.
+- 2026-10-31 — Increased frontend readability, added persisted evidence restoration and Fixes detail navigation, and clarified Approval review.
 
 ## KALI NOTES
 

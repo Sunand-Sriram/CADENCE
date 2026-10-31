@@ -242,3 +242,11 @@
 - Added navy-bordered table panels with sand uppercase header strips, monospace
   tabular alignment, dashed row dividers, and semantic status colors.
 - Kept the existing light palette and removed any live indicator or animation.
+
+## 2026-10-31 — Step 27 — readability + fixes detail view + persist results + approval clarity
+
+- Enlarged the layout and typography for projector readability while preserving
+  the departure-board table style.
+- Added evidence-backed Fixes detail views with Back to Fixes navigation and
+  restored persisted comparisons on load using evidence reads only.
+- Added a concise Approval explanation without changing approval behavior.

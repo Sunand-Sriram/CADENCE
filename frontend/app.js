@@ -252,7 +252,7 @@ function renderQuantum(payload) {
 
 function candidateTable(asset, comparison) {
   return `<div class="table-panel"><div class="table-panel-header">Fix Candidates</div><div class="table-wrap"><table class="fix-table">
-    <thead><tr><th>Candidate</th><th>Builds</th><th>Crash fixed</th><th>Regression</th><th>Crypto verified</th><th>Risk Before → After</th><th>Drop</th><th>Approve</th></tr></thead>
+    <thead><tr><th>Candidate</th><th>Builds</th><th>Crash fixed</th><th>Regression</th><th>Crypto verified</th><th>Risk Before → After</th><th>Drop</th><th>Review / Approve</th></tr></thead>
     <tbody>${comparison.candidates.map(candidate => `<tr class="${candidate.target_algorithm === comparison.recommended ? "recommended" : ""}">
       <td><span class="algorithm">${escapeHtml(candidate.target_algorithm)}</span>${candidate.target_algorithm === comparison.recommended ? ` <span class="recommended-badge">Recommended</span>` : ""}${candidate.simulated ? ` <span class="simulated-badge">simulated</span>` : ""}${candidate.execution_failed ? `<small class="execution-note">execution failed</small>` : ""}${shortPatchHash(candidate) ? `<small class="patch-hash mono">${escapeHtml(shortPatchHash(candidate))}</small>` : ""}</td>
       <td>${testResult(candidate.builds)}</td>
@@ -261,7 +261,7 @@ function candidateTable(asset, comparison) {
       <td>${testResult(candidate.crypto_verified)}</td>
       <td class="mono risk-transition">${escapeHtml(candidate.risk_before)} → ${escapeHtml(candidate.risk_after)}</td>
       <td class="risk-drop">-${escapeHtml(Math.abs(candidate.risk_drop))}</td>
-      <td>${candidate.validates ? `<button class="approve-button" type="button" data-asset-id="${escapeHtml(asset.asset_id)}" data-algorithm="${escapeHtml(candidate.target_algorithm)}">Approve</button>` : ""}</td>
+      <td><button class="view-tests" type="button" data-asset-id="${escapeHtml(asset.asset_id)}" data-algorithm="${escapeHtml(candidate.target_algorithm)}">View tests</button>${candidate.validates ? `<button class="approve-button" type="button" data-asset-id="${escapeHtml(asset.asset_id)}" data-algorithm="${escapeHtml(candidate.target_algorithm)}">Approve</button>` : ""}</td>
     </tr>`).join("")}</tbody>
   </table></div></div>
   <p class="approval-message" aria-live="polite"></p>`;
@@ -269,6 +269,7 @@ function candidateTable(asset, comparison) {
 
 function attachApprovalButtons(container) {
   container.querySelectorAll(".approve-button").forEach(button => button.addEventListener("click", handleApproval));
+  container.querySelectorAll(".view-tests").forEach(button => button.addEventListener("click", handleEvidenceDetail));
 }
 
 async function loadComparison(asset, article, button, status) {
@@ -298,15 +299,11 @@ async function loadComparison(asset, article, button, status) {
     status.className = "compare-status";
     progress.hidden = true;
     percent.hidden = true;
-    article.querySelector(".compare-results").innerHTML = candidateTable(asset, comparison);
-    attachApprovalButtons(article);
+    let evidencePayload = null;
     if (comparison.recommended) {
-      try {
-        renderApprovalReview(asset, await evidence(asset.asset_id), comparison);
-      } catch (error) {
-        // The comparison remains usable if the optional evidence request is unavailable.
-      }
+      try { evidencePayload = await evidence(asset.asset_id); } catch (error) { /* comparison remains usable */ }
     }
+    fillComparisonCard(asset, comparison, evidencePayload);
   } catch (error) {
     clearInterval(timer);
     progress.hidden = true;
@@ -338,6 +335,44 @@ function renderFixComparisons(payload) {
     button.addEventListener("click", () => loadComparison(assets[index], article, button, status));
   });
   document.querySelector("#quantum-section")?.insertAdjacentElement("afterend", section) || document.querySelector("#cbom-section").insertAdjacentElement("afterend", section);
+}
+
+function fillComparisonCard(asset, comparison, evidencePayload = null) {
+  const article = document.querySelector(`.fix-asset[data-asset-id="${CSS.escape(asset.asset_id)}"]`);
+  if (!article) return;
+  const button = article.querySelector(".compare-button");
+  button.hidden = true;
+  article.querySelector(".compare-status").textContent = "";
+  article.querySelector(".compare-results").innerHTML = candidateTable(asset, comparison);
+  attachApprovalButtons(article);
+  if (comparison.recommended && evidencePayload) renderApprovalReview(asset, evidencePayload, comparison);
+}
+
+async function restorePersistedComparisons(payload) {
+  const assets = (payload?.assets || []).filter(asset => asset.is_weak);
+  await Promise.all(assets.map(async asset => {
+    try {
+      const evidencePayload = await evidence(asset.asset_id);
+      const comparison = evidencePayload?.comparison;
+      if (comparison?.candidates?.length) fillComparisonCard(asset, comparison, evidencePayload);
+    } catch (error) {
+      // Missing evidence means this asset has not been compared yet.
+    }
+  }));
+}
+
+async function handleEvidenceDetail(event) {
+  const button = event.currentTarget;
+  const asset = assetBlockAsset(button.dataset.assetId);
+  button.disabled = true;
+  button.textContent = "Loading tests";
+  try {
+    const evidencePayload = await evidence(asset.asset_id);
+    renderFixDetail(asset, evidencePayload);
+  } catch (error) {
+    button.disabled = false;
+    button.textContent = "View tests";
+  }
 }
 
 async function handleApproval(event) {
@@ -379,24 +414,45 @@ function assetBlockAsset(assetId) {
   return assetDetailsById.get(assetId) || { asset_id: assetId, algorithm: "Asset" };
 }
 
-function renderApprovalReview(asset, evidencePayload, comparison) {
-  document.querySelector("#approval-section")?.remove();
+function evidenceReviewMarkup(asset, evidencePayload, comparison) {
   const diagnosis = evidencePayload?.diagnosis || {};
   const patch = evidencePayload?.patch || {};
   const validation = evidencePayload?.validation || {};
   const selectedAlgorithm = evidencePayload?.approval?.chosen_algorithm || comparison?.recommended || "—";
   const selectedCandidate = (evidencePayload?.comparison?.candidates || comparison?.candidates || []).find(candidate => candidate.target_algorithm === selectedAlgorithm);
   const simulated = selectedCandidate?.simulated ?? validation.simulated;
-  const section = document.createElement("section");
-  section.id = "approval-section";
-  section.className = "dashboard-section";
-  section.innerHTML = `<div class="section-heading"><h2>Approval Review</h2><span class="section-meta">${escapeHtml(assetLabel(asset.asset_id, asset.algorithm))}</span></div>
-    <div class="review-block"><h3>Diagnosis</h3><p><strong>Root cause</strong> ${escapeHtml(diagnosis.root_cause || "—")}</p><p><strong>Vulnerability class</strong> ${escapeHtml(diagnosis.vulnerability_class || "—")}</p></div>
+  return `<div class="review-block"><h3>Diagnosis</h3><p><strong>Root cause</strong> ${escapeHtml(diagnosis.root_cause || "—")}</p><p><strong>Vulnerability class</strong> ${escapeHtml(diagnosis.vulnerability_class || "—")}</p></div>
     <details class="reasoning-block"><summary>Reasoning trace</summary><pre>${escapeHtml(diagnosis.reasoning_trace || "—")}</pre></details>
     <div class="review-block"><h3>Patch — ${escapeHtml(selectedAlgorithm)}</h3><div class="patch-columns"><div><h4>Original code</h4><pre>${escapeHtml(patch.original_code || "—")}</pre></div><div><h4>Patched code</h4><pre>${escapeHtml(patch.patched_code || "—")}</pre></div></div></div>
     <div class="review-block"><h3>Validation</h3><div class="review-tests"><span>Builds ${testResult(validation.builds)}</span><span>Crash fixed ${testResult(validation.crash_fixed)}</span><span>Regression ${testResult(validation.regression_pass)}</span><span>Crypto verified ${testResult(selectedCandidate?.crypto_verified ?? false)}</span>${simulated ? `<span class="simulated-badge">simulated</span>` : ""}</div></div>`;
+}
+
+function renderApprovalReview(asset, evidencePayload, comparison) {
+  document.querySelector("#approval-section")?.remove();
+  const section = document.createElement("section");
+  section.id = "approval-section";
+  section.className = "dashboard-section";
+  section.innerHTML = `<div class="section-heading"><h2>Approval Review</h2><span class="section-meta">${escapeHtml(assetLabel(asset.asset_id, asset.algorithm))}</span></div><p class="approval-note">A human reviews the generated fix and its test evidence, then approves it; the system refuses fixes that are not genuinely validated.</p>${evidenceReviewMarkup(asset, evidencePayload, comparison)}`;
   document.querySelector("#dashboard-sections").appendChild(section);
   setActiveTab(activeTab);
+}
+
+function renderFixDetail(asset, evidencePayload) {
+  document.querySelector("#fix-detail-section")?.remove();
+  const comparison = evidencePayload?.comparison || {};
+  const section = document.createElement("section");
+  section.id = "fix-detail-section";
+  section.className = "dashboard-section";
+  section.innerHTML = `<button class="detail-back" type="button">← Back to Fixes</button><div class="section-heading"><h2>Fix Test Detail</h2><span class="section-meta">${escapeHtml(assetLabel(asset.asset_id, asset.algorithm))}</span></div>${evidenceReviewMarkup(asset, evidencePayload, comparison)}`;
+  document.querySelector("#dashboard-sections").appendChild(section);
+  section.querySelector(".detail-back").addEventListener("click", () => {
+    section.remove();
+    document.querySelector("#fix-section").hidden = false;
+    setActiveTab("fixes");
+  });
+  setActiveTab("fixes");
+  document.querySelector("#fix-section").hidden = true;
+  section.hidden = false;
 }
 
 function wait(milliseconds) {
@@ -449,6 +505,7 @@ async function loadDashboard(withProgress = false) {
       renderQuantum({ assessments: [] });
     }
     renderFixComparisons(assets);
+    restorePersistedComparisons(assets);
     renderOverview(status, assets, quantumPayload);
     setActiveTab(activeTab);
     if (withProgress) updateAnalyzeProgress(100, "Quantum loaded");
