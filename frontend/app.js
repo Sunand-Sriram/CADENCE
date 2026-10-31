@@ -123,10 +123,24 @@ function renderOverview(status, assets, quantumPayload) {
   document.querySelector("#overview-section")?.remove();
   const assetList = assets?.assets || [];
   const quantumAtRisk = (quantumPayload?.assessments || []).filter(assessment => assessment.mosca_at_risk).length;
+  const riskAssessments = window.currentRiskAssessments || [];
+  const bands = ["Low", "Moderate", "High", "Critical"];
+  const bandCounts = Object.fromEntries(bands.map(band => [band, riskAssessments.filter(assessment => assessment.band === band).length]));
+  const highestBand = [...bands].reverse().find(band => bandCounts[band] > 0) || "None";
+  const repo = status?.repo || "—";
+  const repoName = repo.split("/").filter(Boolean).pop() || repo;
   const section = document.createElement("section");
   section.id = "overview-section";
   section.className = "dashboard-section";
-  section.innerHTML = `<div class="section-heading"><h2>Overview</h2></div><p class="overview-summary">Repo: ${escapeHtml(status?.repo || "—")} · Commit: ${escapeHtml(status?.commit || "—")} · Assets: ${assetList.length} · Weak: ${assetList.filter(asset => asset.is_weak).length} · Quantum at risk: ${quantumAtRisk}</p>`;
+  section.innerHTML = `<div class="section-heading"><h2>Overview</h2></div>
+    <p class="overview-repo">${escapeHtml(repoName)} · ${escapeHtml(String(status?.commit || "—").slice(0, 7))}</p>
+    <div class="overview-stats">
+      <div><strong>${assetList.length}</strong><span>Crypto assets</span></div>
+      <div><strong>${assetList.filter(asset => asset.is_weak).length}</strong><span>Weak assets</span></div>
+      <div><strong>${quantumAtRisk}</strong><span>Quantum at risk</span></div>
+      <div><strong>${escapeHtml(highestBand)}</strong><span>Highest risk band</span></div>
+    </div>
+    <div class="severity-breakdown">${bands.map(band => `<div><strong>${bandCounts[band]}</strong><span>${band}</span></div>`).join("")}</div>`;
   document.querySelector("#dashboard-sections").insertAdjacentElement("afterbegin", section);
 }
 
@@ -134,21 +148,43 @@ function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[character]));
 }
 
+let assetDetailsById = new Map();
+
+function registerAssets(assets) {
+  assetDetailsById = new Map(assets.map((asset, index) => [asset.asset_id, { ...asset, index: index + 1 }]));
+}
+
+function assetLabel(assetId, algorithm = "Asset") {
+  const asset = assetDetailsById.get(assetId);
+  if (!asset) return `${algorithm} — ${assetId}`;
+  return `${asset.algorithm || algorithm} #${asset.index} — ${asset.file_path}:${asset.line}`;
+}
+
+function assetTrace(assetId) {
+  return `<span class="asset-trace mono">${escapeHtml(assetId)}</span>`;
+}
+
+function testResult(value) {
+  return `<span class="test-result ${value ? "pass" : "fail"}">${value ? "✓ pass" : "failed"}</span>`;
+}
+
 function renderCbom(payload) {
   const assets = payload.assets || [];
+  registerAssets(assets);
   document.querySelector("#asset-count").textContent = `${assets.length} ASSET${assets.length === 1 ? "" : "S"}`;
   document.querySelector("#cbom-body").innerHTML = assets.length ? assets.map(asset => `<tr>
-    <td><span class="algorithm">${escapeHtml(asset.algorithm)}</span></td>
+    <td><span class="algorithm">${escapeHtml(assetLabel(asset.asset_id))}</span><br>${assetTrace(asset.asset_id)}</td>
     <td class="mono asset-id">${escapeHtml(asset.asset_id)}</td>
     <td class="mono">${escapeHtml(asset.file_path)}:${escapeHtml(asset.line)}</td>
     <td>${escapeHtml(asset.operation)}</td>
-    <td>${asset.is_weak ? `<span class="badge weak" title="${escapeHtml(asset.weak_reason)}">WEAK</span>` : `<span class="badge safe">CLEAR</span>`}</td>
+    <td>${asset.is_weak ? `<span class="weakness weak" title="${escapeHtml(asset.weak_reason)}">Weak</span><small class="weak-reason">${escapeHtml(asset.weak_reason)}</small>` : `<span class="weakness strong">Strong</span>`}</td>
   </tr>`).join("") : `<tr><td colspan="5" class="empty-state">No cryptographic assets found.</td></tr>`;
 }
 
 function renderRisk(payload) {
   document.querySelector("#risk-section")?.remove();
   const assessments = payload?.assessments || [];
+  window.currentRiskAssessments = assessments;
   if (!assessments.length) return;
 
   const section = document.createElement("section");
@@ -158,12 +194,12 @@ function renderRisk(payload) {
     <div class="table-wrap"><table class="risk-table">
       <thead><tr><th>Algorithm</th><th>Score</th><th>Band</th><th>Rationale</th></tr></thead>
       <tbody>${assessments.map(assessment => `<tr>
-        <td><span class="algorithm">${escapeHtml(assessment.algorithm)}</span></td>
+        <td><span class="algorithm">${escapeHtml(assetLabel(assessment.asset_id, assessment.algorithm))}</span><br>${assetTrace(assessment.asset_id)}</td>
         <td><span class="risk-score">${escapeHtml(assessment.score)}</span></td>
         <td><span class="risk-band ${escapeHtml(String(assessment.band).toLowerCase())}">${escapeHtml(assessment.band)}</span></td>
-        <td class="rationale">${escapeHtml(assessment.rationale)}</td>
+        <td class="rationale"><div class="factor-breakdown">${Object.entries(assessment.factors || {}).map(([factor, value]) => `${escapeHtml(factor)} ${escapeHtml(value)}`).join(" · ")}</div>${escapeHtml(assessment.rationale)}</td>
       </tr>`).join("")}</tbody>
-    </table></div>`;
+    </table></div><p class="risk-caption">Weighted 0-100 model: weakness 35%, exposure 20%, data sensitivity 15%, lifetime 15%, feasibility 20%.</p>`;
   document.querySelector("#cbom-section").insertAdjacentElement("afterend", section);
 }
 
@@ -200,10 +236,12 @@ function renderQuantum(payload) {
 
 function candidateTable(asset, comparison) {
   return `<div class="table-wrap"><table class="fix-table">
-    <thead><tr><th>Candidate</th><th>Validates</th><th>Risk Before → After</th><th>Drop</th><th>Approve</th></tr></thead>
+    <thead><tr><th>Candidate</th><th>Builds</th><th>Crash fixed</th><th>Regression</th><th>Risk Before → After</th><th>Drop</th><th>Approve</th></tr></thead>
     <tbody>${comparison.candidates.map(candidate => `<tr class="${candidate.target_algorithm === comparison.recommended ? "recommended" : ""}">
       <td><span class="algorithm">${escapeHtml(candidate.target_algorithm)}</span>${candidate.target_algorithm === comparison.recommended ? ` <span class="recommended-badge">Recommended</span>` : ""}</td>
-      <td><span class="validation ${candidate.validates ? "valid" : "failed"}">${candidate.validates ? "✓ valid" : "failed"}</span></td>
+      <td>${testResult(candidate.builds)}</td>
+      <td>${testResult(candidate.crash_fixed)}</td>
+      <td>${testResult(candidate.regression_pass)}</td>
       <td class="mono risk-transition">${escapeHtml(candidate.risk_before)} → ${escapeHtml(candidate.risk_after)}</td>
       <td class="risk-drop">-${escapeHtml(Math.abs(candidate.risk_drop))}</td>
       <td>${candidate.validates ? `<button class="approve-button" type="button" data-asset-id="${escapeHtml(asset.asset_id)}" data-algorithm="${escapeHtml(candidate.target_algorithm)}">Approve</button>` : ""}</td>
@@ -265,7 +303,7 @@ function renderFixComparisons(payload) {
   section.className = "dashboard-section";
   section.innerHTML = `<div class="section-heading"><h2>Fix Alternatives</h2><span class="section-meta">${assets.length} WEAK ASSET${assets.length === 1 ? "" : "S"}</span></div>
     ${assets.map(asset => `<article class="fix-asset" data-asset-id="${escapeHtml(asset.asset_id)}">
-      <h3>${escapeHtml(asset.algorithm)} <span>— candidate fixes</span></h3>
+      <h3>${escapeHtml(assetLabel(asset.asset_id))} <span>— candidate fixes</span> ${assetTrace(asset.asset_id)}</h3>
       <div class="compare-controls"><button class="compare-button" type="button">Compare fixes</button><span class="compare-status" aria-live="polite"></span><span class="compare-percent" hidden>0%</span></div>
       <div class="progress-track compare-progress" hidden><div class="progress-fill"></div></div>
       <div class="compare-results"></div>

@@ -220,3 +220,11 @@
   active built section visible.
 - Added stage-driven Analyze progress and bounded per-asset Compare progress;
   Compare reaches 100% only when its real response arrives.
+
+## 2026-10-31 — Step 23 — asset indexing, label clarity, test-data in fixes, overview redesign
+
+- Added stable asset index plus file location and short asset ID traceability
+  across CBOM, Risk, and Fixes.
+- Clarified Weakness labels, exposed risk factors and weighting, and showed
+  Builds, Crash fixed, and Regression results for each fix candidate.
+- Redesigned Overview with large summary figures and severity counts.
