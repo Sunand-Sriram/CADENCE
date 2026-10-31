@@ -173,6 +173,7 @@ th:first-child, td:first-child { padding-left: 14px; }
 .approval-note { margin: 0 0 20px; color: var(--grey); font-size: .95rem; }
 .detail-back { margin-bottom: 20px; }
 .detail-back:hover { color: var(--sand); }
+.detail-approve { margin-top: 24px; }
 .review-block { border-top: 1px solid var(--sand); margin-top: 22px; padding-top: 16px; }
 .review-block h3 { margin: 0 0 12px; font: 700 .82rem var(--mono); }
 .review-block h4 { margin: 0 0 7px; color: var(--grey); font: 700 .68rem var(--mono); }

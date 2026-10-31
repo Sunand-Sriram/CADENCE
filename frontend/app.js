@@ -452,17 +452,17 @@ function assetBlockAsset(assetId) {
   return assetDetailsById.get(assetId) || { asset_id: assetId, algorithm: "Asset" };
 }
 
-function evidenceReviewMarkup(asset, evidencePayload, comparison) {
+function evidenceReviewMarkup(asset, evidencePayload, comparison, includeValidation = true) {
   const diagnosis = evidencePayload?.diagnosis || {};
   const patch = evidencePayload?.patch || {};
   const validation = evidencePayload?.validation || {};
   const selectedAlgorithm = evidencePayload?.approval?.chosen_algorithm || comparison?.recommended || "—";
   const selectedCandidate = (evidencePayload?.comparison?.candidates || comparison?.candidates || []).find(candidate => candidate.target_algorithm === selectedAlgorithm);
   const simulated = selectedCandidate?.simulated ?? validation.simulated;
+  const validationMarkup = includeValidation ? `<div class="review-block"><h3>Validation</h3><div class="review-tests"><span>Builds ${testResult(validation.builds)}</span><span>Crash fixed ${testResult(validation.crash_fixed)}</span><span>Regression ${testResult(validation.regression_pass)}</span><span>Crypto verified ${testResult(selectedCandidate?.crypto_verified ?? false)}</span>${simulated ? `<span class="simulated-badge">simulated</span>` : ""}</div></div>` : "";
   return `<div class="review-block"><h3>Diagnosis</h3><p><strong>Root cause</strong> ${escapeHtml(diagnosis.root_cause || "—")}</p><p><strong>Vulnerability class</strong> ${escapeHtml(diagnosis.vulnerability_class || "—")}</p></div>
     <details class="reasoning-block"><summary>Reasoning trace</summary><pre>${escapeHtml(diagnosis.reasoning_trace || "—")}</pre></details>
-    <div class="review-block"><h3>Patch — ${escapeHtml(selectedAlgorithm)}</h3><div class="patch-columns"><div><h4>Original code</h4><pre>${escapeHtml(patch.original_code || "—")}</pre></div><div><h4>Patched code</h4><pre>${escapeHtml(patch.patched_code || "—")}</pre></div></div></div>
-    <div class="review-block"><h3>Validation</h3><div class="review-tests"><span>Builds ${testResult(validation.builds)}</span><span>Crash fixed ${testResult(validation.crash_fixed)}</span><span>Regression ${testResult(validation.regression_pass)}</span><span>Crypto verified ${testResult(selectedCandidate?.crypto_verified ?? false)}</span>${simulated ? `<span class="simulated-badge">simulated</span>` : ""}</div></div>`;
+    <div class="review-block"><h3>Patch — ${escapeHtml(selectedAlgorithm)}</h3><div class="patch-columns"><div><h4>Original code</h4><pre>${escapeHtml(patch.original_code || "—")}</pre></div><div><h4>Patched code</h4><pre>${escapeHtml(patch.patched_code || "—")}</pre></div></div></div>${validationMarkup}`;
 }
 
 function renderApprovalReview(asset, evidencePayload, comparison) {
@@ -481,12 +481,16 @@ function renderFixDetail(asset, evidencePayload) {
   const section = document.createElement("section");
   section.id = "fix-detail-section";
   section.className = "dashboard-section";
-  section.innerHTML = `<button class="detail-back" type="button">← Back to Fixes</button><div class="section-heading"><h2>Fix Test Detail</h2><span class="section-meta">${escapeHtml(assetLabel(asset.asset_id, asset.algorithm))}</span></div>${evidenceReviewMarkup(asset, evidencePayload, comparison)}`;
+  section.innerHTML = `<button class="detail-back" type="button">← Back to Fixes</button><div class="section-heading"><h2>Fix Test Detail</h2><span class="section-meta">${escapeHtml(assetLabel(asset.asset_id, asset.algorithm))}</span></div>${evidenceReviewMarkup(asset, evidencePayload, comparison, false)}<button class="detail-approve" type="button">Approve fix</button><p class="approval-message" aria-live="polite"></p>`;
   document.querySelector("#dashboard-sections").appendChild(section);
   section.querySelector(".detail-back").addEventListener("click", () => {
     section.remove();
     document.querySelector("#fix-section").hidden = false;
     setActiveTab("fixes");
+  });
+  section.querySelector(".detail-approve").addEventListener("click", () => {
+    renderApprovalReview(asset, evidencePayload, comparison);
+    setActiveTab("approval");
   });
   setActiveTab("fixes");
   document.querySelector("#fix-section").hidden = true;
