@@ -228,3 +228,11 @@
 - Clarified Weakness labels, exposed risk factors and weighting, and showed
   Builds, Crash fixed, and Regression results for each fix candidate.
 - Redesigned Overview with large summary figures and severity counts.
+
+## 2026-10-31 — Step 25 — nav bar + fixes fields + approval review + simulated handling
+
+- Restyled the header navigation with repository context and responsive tabs.
+- Added crypto verification, simulation/execution notes, short patch hashes, and
+  evidence-backed diagnosis, reasoning, patch, and validation review content.
+- Approval now surfaces backend refusal reasons, including HTTP 400 simulated-mode
+  refusals, without showing a false success.
