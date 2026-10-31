@@ -489,6 +489,7 @@ async function loadDashboard(withProgress = false) {
   try {
     const [healthData, status, assets] = await Promise.all([health(), ingestStatus(), cbom()]);
     hasAnalysis = true;
+    document.querySelector("#tab-bar").hidden = false;
     document.querySelector("#initial-state").hidden = true;
     renderCbom(assets);
     if (withProgress) updateAnalyzeProgress(50, "CBOM loaded");

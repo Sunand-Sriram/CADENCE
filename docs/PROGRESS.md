@@ -269,3 +269,7 @@
 ## 2026-10-31 — Step 31 — default tab Overview
 
 - Changed the initial active navigation tab from CBOM to Overview without changing data loading or blank-canvas behavior.
+
+## 2026-10-31 — Step 32 — hide nav until analyzed
+
+- Hid Overview/CBOM/Risk/Quantum/Fixes/Approval navigation on initial load and reveal it after the analyzed job loads successfully.
