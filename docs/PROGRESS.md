@@ -283,3 +283,8 @@
 
 - Removed duplicate ID and file-location content from readable algorithm labels and added dedicated metadata columns where needed.
 - Rebalanced all four table layouts so distinct data fills the available width cleanly.
+
+## 2026-10-31 — Step 34 — fix Risk column wrapping + factors detail on click
+
+- Removed inline Risk factors/rationale from the table and fixed Risk wrapping to remain word-based.
+- Added a static Risk score detail view with factor values, weights, rationale, weighted computation, band, and Back to Risk navigation.

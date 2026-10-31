@@ -67,13 +67,24 @@ table { width: 100%; border-collapse: collapse; text-align: left; }
 #cbom-section table th:nth-child(3), #cbom-section table td:nth-child(3) { width: 17%; }
 #cbom-section table th:nth-child(4), #cbom-section table td:nth-child(4) { width: 17%; }
 #cbom-section table th:nth-child(5), #cbom-section table td:nth-child(5) { width: 25%; }
-.risk-table th:nth-child(1), .risk-table td:nth-child(1) { width: 20%; }
-.risk-table th:nth-child(2), .risk-table td:nth-child(2) { width: 14%; }
-.risk-table th:nth-child(3), .risk-table td:nth-child(3) { width: 17%; }
-.risk-table th:nth-child(4), .risk-table td:nth-child(4) { width: 9%; text-align: center; }
-.risk-table th:nth-child(5), .risk-table td:nth-child(5) { width: 13%; }
-.risk-table th:nth-child(6), .risk-table td:nth-child(6) { width: 27%; }
-.risk-table .factor-breakdown, .risk-table .rationale { display: block; max-width: none; white-space: normal; }
+.risk-table th:nth-child(1), .risk-table td:nth-child(1) { width: 25%; }
+.risk-table th:nth-child(2), .risk-table td:nth-child(2) { width: 15%; }
+.risk-table th:nth-child(3), .risk-table td:nth-child(3) { width: 20%; }
+.risk-table th:nth-child(4), .risk-table td:nth-child(4) { width: 10%; text-align: center; }
+.risk-table th:nth-child(5), .risk-table td:nth-child(5) { width: 15%; }
+.risk-table th:nth-child(6), .risk-table td:nth-child(6) { width: 15%; }
+.risk-table th, .risk-table td { overflow-wrap: normal; word-break: normal; white-space: normal; }
+.risk-detail-button { padding: 9px 14px; font-size: .9rem; }
+.risk-detail-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; border-top: 1px solid var(--sand); border-bottom: 1px solid var(--sand); padding: 18px 0; }
+.risk-detail-summary p { margin: 0; color: var(--grey); }
+.risk-detail-summary strong { display: block; margin-bottom: 5px; color: var(--navy); font: 700 .8rem var(--mono); }
+.risk-factors { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; }
+.risk-factors div { display: flex; flex-direction: column; gap: 4px; border-left: 3px solid var(--sand); padding-left: 12px; }
+.risk-factors strong, .risk-factors span { color: var(--navy); font-family: var(--mono); }
+.risk-factors strong { font-size: .85rem; overflow-wrap: anywhere; }
+.risk-factors span { font-size: 1.4rem; font-weight: 700; }
+.risk-factors small { color: var(--grey); font: .8rem var(--mono); }
+.risk-formula { color: var(--navy); font-size: 1rem; white-space: normal; overflow-wrap: normal; word-break: normal; }
 .quantum-table th:nth-child(1), .quantum-table td:nth-child(1) { width: 18%; }
 .quantum-table th:nth-child(2), .quantum-table td:nth-child(2) { width: 13%; }
 .quantum-table th:nth-child(3), .quantum-table td:nth-child(3) { width: 16%; }
@@ -180,6 +191,7 @@ th:first-child, td:first-child { padding-left: 14px; }
   button { width: 100%; }
   .overview-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .patch-columns { grid-template-columns: 1fr; }
+  .risk-detail-summary, .risk-factors { grid-template-columns: 1fr 1fr; }
   .fix-asset h3 { padding-right: 0; white-space: normal; }
   .compare-controls { position: static; justify-content: flex-start; margin-bottom: 10px; }
   th, td { white-space: nowrap; }

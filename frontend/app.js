@@ -214,17 +214,45 @@ function renderRisk(payload) {
   section.className = "dashboard-section";
   section.innerHTML = `<div class="section-heading"><h2>Risk Assessment</h2><span class="section-meta">${assessments.length} ASSESSMENT${assessments.length === 1 ? "" : "S"}</span></div>
     <div class="table-panel"><div class="table-panel-header">Risk Board</div><div class="table-wrap"><table class="risk-table">
-      <thead><tr><th>Algorithm</th><th>Asset ID</th><th>File:Line</th><th>Score</th><th>Band</th><th>Factors / Rationale</th></tr></thead>
+      <thead><tr><th>Algorithm</th><th>Asset ID</th><th>File:Line</th><th>Score</th><th>Band</th><th>Details</th></tr></thead>
       <tbody>${assessments.map(assessment => `<tr>
         <td><span class="algorithm">${escapeHtml(assetReadableLabel(assessment.asset_id, assessment.algorithm))}</span></td>
         <td class="mono asset-id">${escapeHtml(assessment.asset_id)}</td>
         <td class="mono">${escapeHtml(assetDetailsById.get(assessment.asset_id)?.file_path || "—")}:${escapeHtml(assetDetailsById.get(assessment.asset_id)?.line || "—")}</td>
         <td><span class="risk-score">${escapeHtml(assessment.score)}</span></td>
         <td><span class="risk-band ${escapeHtml(String(assessment.band).toLowerCase())}">${escapeHtml(assessment.band)}</span></td>
-        <td class="rationale"><div class="factor-breakdown">${Object.entries(assessment.factors || {}).map(([factor, value]) => `${escapeHtml(factor)} ${escapeHtml(value)}`).join(" · ")}</div>${escapeHtml(assessment.rationale)}</td>
+        <td><button class="risk-detail-button" type="button" data-asset-id="${escapeHtml(assessment.asset_id)}">Details</button></td>
       </tr>`).join("")}</tbody>
     </table></div></div><p class="risk-caption">Weighted 0-100 model: weakness 35%, exposure 20%, data sensitivity 15%, lifetime 15%, feasibility 20%.</p>`;
   document.querySelector("#cbom-section").insertAdjacentElement("afterend", section);
+  section.querySelectorAll(".risk-detail-button").forEach(button => button.addEventListener("click", () => {
+    const assessment = assessments.find(item => item.asset_id === button.dataset.assetId);
+    if (assessment) renderRiskDetail(assessment);
+  }));
+}
+
+function renderRiskDetail(assessment) {
+  document.querySelector("#risk-detail-section")?.remove();
+  const section = document.createElement("section");
+  section.id = "risk-detail-section";
+  section.className = "dashboard-section";
+  const factors = ["weakness", "exposure", "data_sensitivity", "lifetime", "feasibility"];
+  const weights = { weakness: "35%", exposure: "20%", data_sensitivity: "15%", lifetime: "15%", feasibility: "15%" };
+  section.innerHTML = `<button class="detail-back" type="button">← Back to Risk</button>
+    <div class="section-heading"><h2>Risk Score Detail</h2><span class="section-meta">${escapeHtml(assetReadableLabel(assessment.asset_id, assessment.algorithm))}</span></div>
+    <div class="risk-detail-summary"><p><strong>Asset ID</strong> <span class="mono">${escapeHtml(assessment.asset_id)}</span></p><p><strong>File:Line</strong> <span class="mono">${escapeHtml(assetDetailsById.get(assessment.asset_id)?.file_path || "—")}:${escapeHtml(assetDetailsById.get(assessment.asset_id)?.line || "—")}</span></p><p><strong>Final score</strong> <span class="risk-score">${escapeHtml(assessment.score)} / 100</span></p><p><strong>Band</strong> <span class="risk-band ${escapeHtml(String(assessment.band).toLowerCase())}">${escapeHtml(assessment.band)}</span></p></div>
+    <div class="review-block"><h3>Factor breakdown</h3><div class="risk-factors">${factors.map(factor => `<div><strong>${escapeHtml(factor)}</strong><span>${escapeHtml(assessment.factors?.[factor] ?? "—")}</span><small>weight ${weights[factor]}</small></div>`).join("")}</div></div>
+    <div class="review-block"><h3>Rationale</h3><p class="rationale">${escapeHtml(assessment.rationale || "—")}</p></div>
+    <div class="review-block"><h3>Weighted computation</h3><p class="risk-formula mono">(${factors.map(factor => `${escapeHtml(assessment.factors?.[factor] ?? "—")} × ${weights[factor]}`).join(") + (")}) = ${escapeHtml(assessment.score)}</p></div>`;
+  document.querySelector("#dashboard-sections").appendChild(section);
+  section.querySelector(".detail-back").addEventListener("click", () => {
+    section.remove();
+    document.querySelector("#risk-section").hidden = false;
+    setActiveTab("risk");
+  });
+  setActiveTab("risk");
+  document.querySelector("#risk-section").hidden = true;
+  section.hidden = false;
 }
 
 function renderQuantum(payload) {
