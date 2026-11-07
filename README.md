@@ -193,7 +193,7 @@ CADENCE was built within the 24-hour window as our answer to that brief: instead
 
 | Name | Role |
 |------|------|
-| [Sunand]|(https://github.com/Sunand-Sriram)|
+| Sunand|(https://github.com/Sunand-Sriram)|
 | Chandana |(https://github.com/chandana-h-y245)|
 | Yashas |(https://github.com/0YashasGS0)|
 
