@@ -181,8 +181,22 @@ Open the dashboard, paste a GitHub repo URL, and click **Analyze**.
 
 ---
 
+## Hackathon
+
+🏆 **1st Place, Parallax 2026** — a 24-hour national-level hackathon organized by the **IEEE Computer Society, BMS College of Engineering**, with ~60 teams competing both online and offline.
+
+**Problem statement:** PS-02 *PatchProof* (AppSec / SAST / Secure Patching) — *Find the Flaw. Prove the Fix.*
+
+CADENCE was built within the 24-hour window as our answer to that brief: instead of only flagging weak cryptography, it verifies that each proposed fix builds, stops the original exploit, passes regression tests, and uses a verified crypto replacement before a human approves it.
+
 ## Team
+
+| Name | Role |
+|------|------|
+| [Sunand]|(https://github.com/Sunand-Sriram)|
+| Chandana |(https://github.com/chandana-h-y245)|
+| Yashas |(https://github.com/0YashasGS0)|
 
 B.M.S. College of Engineering, Bengaluru.
 
-Repository: https://github.com/Sunand-Sriram/CADENCE
+Repository: [https://github.com/Sunand-Sriram/CADENCE](https://github.com/Sunand-Sriram/CADENCE)
